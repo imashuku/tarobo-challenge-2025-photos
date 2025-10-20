@@ -1,0 +1,9 @@
+.venv
+.git
+.DS_Store
+.gitignore
+README.md
+message.md
+config.example.js
+config.js
+tarobo-logo-white.png
