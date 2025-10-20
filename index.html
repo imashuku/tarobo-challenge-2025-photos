@@ -23,7 +23,14 @@
       backdrop-filter: blur(6px);
       display:flex; flex-wrap:wrap; gap:8px; align-items:center;
       max-width:calc(100vw - 200px);
-      transition:bottom 0.3s ease;
+      transition: bottom 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #hud.hidden{
+      opacity: 0;
+      transform: translateY(20px);
+      pointer-events: none;
     }
     #hud.raised{
       bottom:152px; /* サムネイル高さ140px + 余白12px */
@@ -40,6 +47,14 @@
       color:#fff; font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto;
       background:rgba(0,0,0,.35); padding:10px 14px; border-radius:10px;
       backdrop-filter: blur(6px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #image-info.hidden{
+      opacity: 0;
+      transform: translateY(-20px);
+      pointer-events: none;
     }
     #counter{font-size:20px; font-weight:bold; margin-bottom:4px}
     #filename{font-size:12px; opacity:0.8; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
@@ -195,11 +210,17 @@
     /* いいねボタン */
     #like-btn{
       position:fixed; right:12px; bottom:80px; z-index:15;
-      width:50px; height:50px; border-radius:10px;
+      width:60px; height:60px; border-radius:10px;
       background:rgba(0,0,0,0.35); border:1px solid #666;
-      color:#fff; font-size:24px; cursor:pointer;
+      color:#fff; font-size:28px; cursor:pointer;
       backdrop-filter: blur(6px);
-      transition: all 0.3s ease;
+      transition: all 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+      opacity: 1;
+    }
+    #like-btn.hidden{
+      opacity: 0;
+      transform: translateX(20px);
+      pointer-events: none;
     }
     #like-btn:hover{
       transform:scale(1.05);
@@ -221,12 +242,19 @@
 
     /* SNSシェアボタン */
     #share-btns{
-      position:fixed; right:12px; bottom:140px; z-index:15;
+      position:fixed; right:12px; bottom:150px; z-index:15;
       display:flex; flex-direction:column; gap:6px;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      opacity: 1;
+    }
+    #share-btns.hidden{
+      opacity: 0;
+      transform: translateX(20px);
+      pointer-events: none;
     }
     .share-btn{
-      width:50px; height:50px; border-radius:10px;
-      border:1px solid #666; cursor:pointer; font-size:18px;
+      width:60px; height:60px; border-radius:10px;
+      border:1px solid #666; cursor:pointer; font-size:20px;
       transition: all 0.3s ease;
       background:rgba(0,0,0,0.35);
       color:#fff;
@@ -440,6 +468,17 @@
         width:50px;
         height:50px;
         font-size:24px;
+        bottom:70px;
+      }
+
+      /* SNSシェアボタン */
+      #share-btns{
+        bottom:130px;
+      }
+      .share-btn{
+        width:50px;
+        height:50px;
+        font-size:18px;
       }
 
       /* フィルターボタン */
@@ -1302,6 +1341,44 @@
     if (!document.fullscreenElement) stage.requestFullscreen().catch(()=>{});
     else document.exitFullscreen().catch(()=>{});
   });
+
+  // UI自動非表示機能
+  let uiHideTimer = null;
+  const UI_HIDE_DELAY = 3000; // 3秒後にUIを非表示
+
+  function hideUI() {
+    document.getElementById('hud').classList.add('hidden');
+    document.getElementById('image-info').classList.add('hidden');
+    document.getElementById('like-btn').classList.add('hidden');
+    document.getElementById('share-btns').classList.add('hidden');
+  }
+
+  function showUI() {
+    document.getElementById('hud').classList.remove('hidden');
+    document.getElementById('image-info').classList.remove('hidden');
+    document.getElementById('like-btn').classList.remove('hidden');
+    document.getElementById('share-btns').classList.remove('hidden');
+
+    // タイマーをリセット
+    clearTimeout(uiHideTimer);
+    uiHideTimer = setTimeout(hideUI, UI_HIDE_DELAY);
+  }
+
+  // ページ読み込み時と操作時にUIを表示
+  function resetUITimer() {
+    showUI();
+  }
+
+  // マウス移動・タップでUIを表示
+  document.addEventListener('mousemove', resetUITimer);
+  document.addEventListener('touchstart', resetUITimer);
+  document.addEventListener('click', resetUITimer);
+
+  // キーボード操作でもUIを表示
+  document.addEventListener('keydown', resetUITimer);
+
+  // 初期表示
+  resetUITimer();
 
   // 初期化
   initOpening();
