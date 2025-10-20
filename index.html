@@ -1,0 +1,1185 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tarobo Faces - Random 30 Slideshow</title>
+  <style>
+    :root { --fade-ms: 1200; --show-ms: 2500; }
+    html,body,#stage{height:100%;margin:0;background:#000}
+    #stage{position:relative;overflow:hidden;touch-action:none}
+    .slide{
+      position:absolute; inset:0;
+      width:100%; height:100%; object-fit:cover;
+      opacity:0;
+      transition:opacity 1200ms ease-in-out;
+      will-change: opacity;
+    }
+    .slide.active{opacity:1}
+    #hud{
+      position:fixed; left:12px; bottom:12px; z-index:25;
+      color:#fff; font:12px/1.4 system-ui,-apple-system,Segoe UI,Roboto;
+      background:rgba(0,0,0,.35); padding:8px 10px; border-radius:10px;
+      backdrop-filter: blur(6px);
+      display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+      max-width:calc(100vw - 200px);
+      transition:bottom 0.3s ease;
+    }
+    #hud.raised{
+      bottom:152px; /* サムネイル高さ140px + 余白12px */
+    }
+    button{border:1px solid #666; background:#111; color:#fff; padding:6px 10px; border-radius:8px; cursor:pointer; margin:0}
+    button:hover{background:#333; border-color:#888}
+    button:active{background:#000}
+    button.active{background:#0066cc; border-color:#0066cc}
+    a{color:#8bdcff}
+
+    /* 画像情報表示 */
+    #image-info{
+      position:fixed; top:12px; right:12px; z-index:10;
+      color:#fff; font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto;
+      background:rgba(0,0,0,.35); padding:10px 14px; border-radius:10px;
+      backdrop-filter: blur(6px);
+    }
+    #counter{font-size:20px; font-weight:bold; margin-bottom:4px}
+    #filename{font-size:12px; opacity:0.8; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+    /* 進捗バー */
+    #progress-bar{
+      position:fixed; top:0; left:0; right:0; height:3px; z-index:20;
+      background:rgba(255,255,255,0.1);
+    }
+    #progress-fill{
+      height:100%; width:0%; background:linear-gradient(90deg, #0066cc, #00ccff);
+      transition:width 100ms linear;
+    }
+
+    /* スピードコントロール */
+    #speed-controls{
+      display:flex; gap:4px;
+    }
+    #speed-controls button{
+      min-width:45px;
+    }
+
+    /* キーボードヘルプ */
+    #help-btn{
+      position:fixed; top:12px; left:12px; z-index:10;
+      width:40px; height:40px; border-radius:50%;
+      background:rgba(0,0,0,0.35); border:1px solid #666;
+      color:#fff; font-size:20px; cursor:pointer;
+      backdrop-filter: blur(6px);
+      transition: all 0.3s ease;
+      display:flex; align-items:center; justify-content:center;
+    }
+    #help-btn:hover{
+      transform:scale(1.05);
+      background:rgba(0,0,0,0.5);
+      border-color:#888;
+    }
+    #help-panel{
+      position:fixed; top:60px; left:12px; z-index:10;
+      color:#fff; font:12px/1.6 system-ui,-apple-system,Segoe UI,Roboto;
+      background:rgba(0,0,0,0.85); padding:12px 16px; border-radius:10px;
+      backdrop-filter: blur(10px);
+      border:1px solid #666;
+      max-width:320px;
+      display:none;
+    }
+    #help-panel.show{ display:block; }
+    #help-panel h3{
+      margin:0 0 8px 0; font-size:14px; font-weight:bold;
+    }
+    #help-panel ul{
+      margin:0; padding:0; list-style:none;
+    }
+    #help-panel li{
+      margin:4px 0; padding:4px 0;
+    }
+    #help-panel strong{
+      color:#8bdcff; font-weight:normal;
+      display:inline-block; min-width:80px;
+    }
+
+    /* Aboutボタン */
+    #about-btn{
+      position:fixed; top:12px; left:60px; z-index:10;
+      width:40px; height:40px; border-radius:50%;
+      background:rgba(0,0,0,0.35); border:1px solid #666;
+      color:#fff; font-size:20px; cursor:pointer;
+      backdrop-filter: blur(6px);
+      transition: all 0.3s ease;
+      display:flex; align-items:center; justify-content:center;
+    }
+    #about-btn:hover{
+      transform:scale(1.05);
+      background:rgba(0,0,0,0.5);
+      border-color:#888;
+    }
+    #about-panel{
+      position:fixed; top:60px; left:60px; z-index:10;
+      color:#fff; font:12px/1.6 system-ui,-apple-system,Segoe UI,Roboto;
+      background:rgba(0,0,0,0.85); padding:12px 16px; border-radius:10px;
+      backdrop-filter: blur(10px);
+      border:1px solid #666;
+      max-width:360px;
+      display:none;
+    }
+    #about-panel.show{ display:block; }
+    #about-panel h3{
+      margin:0 0 12px 0; font-size:14px; font-weight:bold;
+    }
+    #about-panel p{
+      margin:8px 0;
+      line-height:1.6;
+    }
+    #about-panel .tagline{
+      font-size:11px;
+      color:#999;
+      margin-top:12px;
+      padding-top:8px;
+      border-top:1px solid #444;
+    }
+
+
+    /* オープニング画面 */
+    #opening{
+      position:fixed; inset:0; z-index:200;
+      background:#000;
+      display:flex; align-items:center; justify-content:center;
+      opacity:1;
+      transition:opacity 0.8s ease;
+    }
+    #opening.hide{ opacity:0; pointer-events:none; }
+    #opening-content{
+      text-align:center; color:#fff;
+      max-width:600px; padding:40px;
+    }
+    #opening-logo{
+      width:120px; height:auto;
+      margin:0 auto 24px auto;
+      display:block;
+      opacity:0.9;
+    }
+    #opening h1{
+      font-size:28px; font-weight:bold; margin:0 auto 16px auto;
+      line-height:1.6;
+      text-align:center;
+      width:100%;
+    }
+    #opening .sub{
+      font-size:16px; color:#999; margin:0 0 32px 0;
+    }
+    #opening .tagline{
+      font-size:14px; margin:32px 0;
+      padding:16px 0; border-top:1px solid #333; border-bottom:1px solid #333;
+    }
+    #opening-start{
+      background:rgba(255,255,255,0.1); border:1px solid #666;
+      color:#fff; padding:12px 32px; border-radius:8px;
+      font-size:16px; cursor:pointer;
+      transition:all 0.3s;
+      margin-top:24px;
+    }
+    #opening-start:hover{
+      background:rgba(255,255,255,0.2); border-color:#888;
+      transform:scale(1.05);
+    }
+    #opening-skip{
+      background:transparent; border:none;
+      color:#666; padding:8px; margin-top:16px;
+      font-size:12px; cursor:pointer;
+    }
+    #opening-skip:hover{ color:#999; }
+
+    /* いいねボタン */
+    #like-btn{
+      position:fixed; right:12px; bottom:80px; z-index:15;
+      width:50px; height:50px; border-radius:10px;
+      background:rgba(0,0,0,0.35); border:1px solid #666;
+      color:#fff; font-size:24px; cursor:pointer;
+      backdrop-filter: blur(6px);
+      transition: all 0.3s ease;
+    }
+    #like-btn:hover{
+      transform:scale(1.05);
+      background:rgba(0,0,0,0.5);
+      border-color:#888;
+    }
+    #like-btn:active{ transform:scale(0.95); }
+    #like-btn.liked{ animation: heartBeat 0.3s ease; }
+    @keyframes heartBeat {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+    #like-count{
+      position:absolute; top:-6px; right:-6px;
+      background:rgba(0,102,204,0.9); color:#fff; font-size:11px; font-weight:bold;
+      padding:2px 5px; border-radius:8px; min-width:18px; text-align:center;
+      border:1px solid rgba(255,255,255,0.2);
+    }
+
+    /* SNSシェアボタン */
+    #share-btns{
+      position:fixed; right:12px; bottom:140px; z-index:15;
+      display:flex; flex-direction:column; gap:6px;
+    }
+    .share-btn{
+      width:50px; height:50px; border-radius:10px;
+      border:1px solid #666; cursor:pointer; font-size:18px;
+      transition: all 0.3s ease;
+      background:rgba(0,0,0,0.35);
+      color:#fff;
+      backdrop-filter: blur(6px);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .share-btn:hover{
+      transform:scale(1.05);
+      background:rgba(0,0,0,0.5);
+      border-color:#888;
+    }
+    .share-btn:active{ transform:scale(0.95); }
+
+    /* モーダル（画像拡大表示） */
+    #modal{
+      display:none; position:fixed; inset:0; z-index:100;
+      background:rgba(0,0,0,0.95); cursor:zoom-out;
+      align-items:center; justify-content:center;
+    }
+    #modal.show{ display:flex; }
+    #modal img{
+      max-width:90%; max-height:90%; object-fit:contain;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    #modal-close{
+      position:absolute; top:20px; right:20px;
+      background:rgba(255,255,255,0.2); border:none;
+      color:#fff; font-size:30px; width:50px; height:50px;
+      border-radius:50%; cursor:pointer;
+      backdrop-filter: blur(6px);
+    }
+    #modal-close:hover{ background:rgba(255,255,255,0.3); }
+
+    /* エフェクト選択 */
+    #effect-selector{
+      display:flex;
+    }
+    #effect-selector select{
+      background:#111; color:#fff; border:1px solid #666;
+      padding:6px 8px; border-radius:8px; cursor:pointer;
+      font:12px/1.4 system-ui,-apple-system,Segoe UI,Roboto;
+    }
+    #effect-selector select:hover{ border-color:#888; background:#333; }
+
+    /* BGMコントロール */
+    #bgm-controls{
+      display:flex; gap:6px; align-items:center;
+    }
+    #bgm-toggle{
+      background:#111; border:1px solid #666;
+      color:#fff; padding:6px 10px; border-radius:8px; cursor:pointer;
+      white-space:nowrap;
+    }
+    #bgm-toggle.playing{ background:#0066cc; border-color:#0066cc; }
+    #bgm-volume{
+      width:60px;
+    }
+
+    /* スライドエフェクト用 */
+    .slide.effect-slide-left{
+      transform:translateX(-100%);
+      transition:opacity var(--fade-ms)ms linear, transform var(--fade-ms)ms ease-out;
+    }
+    .slide.effect-slide-left.active{ transform:translateX(0); }
+
+    .slide.effect-slide-right{
+      transform:translateX(100%);
+      transition:opacity var(--fade-ms)ms linear, transform var(--fade-ms)ms ease-out;
+    }
+    .slide.effect-slide-right.active{ transform:translateX(0); }
+
+    .slide.effect-zoom{
+      transform:scale(0.8);
+      transition:opacity var(--fade-ms)ms linear, transform var(--fade-ms)ms ease-out;
+    }
+    .slide.effect-zoom.active{ transform:scale(1); }
+
+    .slide.effect-rotate{
+      transform:rotate(-5deg) scale(0.9);
+      transition:opacity var(--fade-ms)ms linear, transform var(--fade-ms)ms ease-out;
+    }
+    .slide.effect-rotate.active{ transform:rotate(0deg) scale(1); }
+
+    /* サムネイル一覧 */
+    #thumbnails-container{
+      position:fixed; bottom:0; left:0; right:0; height:0; z-index:20;
+      background:rgba(0,0,0,0.9); backdrop-filter:blur(10px);
+      transition:height 0.3s ease;
+      overflow:hidden;
+    }
+    #thumbnails-container.show{ height:140px; }
+    #thumbnails-wrapper{
+      display:flex; gap:8px; padding:12px;
+      overflow-x:auto; overflow-y:hidden; height:100%;
+      align-items:center;
+    }
+    #thumbnails-wrapper::-webkit-scrollbar{ height:8px; }
+    #thumbnails-wrapper::-webkit-scrollbar-track{ background:rgba(255,255,255,0.1); }
+    #thumbnails-wrapper::-webkit-scrollbar-thumb{
+      background:rgba(255,255,255,0.3); border-radius:4px;
+    }
+    .thumbnail{
+      flex-shrink:0; width:100px; height:100px;
+      object-fit:cover; border-radius:8px; cursor:pointer;
+      border:2px solid transparent; transition:all 0.2s ease;
+      position:relative;
+    }
+    .thumbnail:hover{
+      transform:scale(1.1); border-color:#888;
+    }
+    .thumbnail.active{
+      border-color:#0066cc; box-shadow:0 0 12px rgba(0,102,204,0.6);
+    }
+    .thumbnail.liked::after{
+      content:'🤍'; position:absolute; top:4px; right:4px;
+      font-size:16px; text-shadow:0 0 4px rgba(0,0,0,0.8);
+    }
+
+    /* フィルターボタン */
+    #filter-controls{
+      position:fixed; top:50%; right:12px; transform:translateY(-50%); z-index:15;
+      display:flex; flex-direction:column; gap:6px;
+    }
+    #filter-all, #filter-liked{
+      width:50px; height:50px; border-radius:10px;
+      border:1px solid #666; cursor:pointer;
+      background:rgba(0,0,0,0.35); color:#fff;
+      backdrop-filter:blur(6px); transition:all 0.3s ease;
+      display:flex; align-items:center; justify-content:center;
+      font-size:20px;
+    }
+    #filter-all:hover, #filter-liked:hover{
+      transform:scale(1.05); background:rgba(0,0,0,0.5); border-color:#888;
+    }
+    #filter-all.active, #filter-liked.active{
+      background:#0066cc; border-color:#0066cc;
+    }
+  </style>
+</head>
+<body>
+  <div id="progress-bar"><div id="progress-fill"></div></div>
+  <div id="stage" aria-label="スライドショー領域"></div>
+
+  <!-- オープニング画面 -->
+  <div id="opening">
+    <div id="opening-content">
+      <img src="tarobo-logo-white.png" alt="TAROBO CHALLENGE" id="opening-logo">
+      <h1>歴史を駆け抜け、未来を掴め</h1>
+      <p class="sub">掴んだ手すりに残るのは、己の汗と挑戦し続ける意思</p>
+      <p class="tagline">太郎坊チャレンジ 2025<br>掴む、その瞬間の記録</p>
+      <button id="opening-start" title="スライドショーを開始します">スライドショーを見る →</button>
+      <br>
+      <button id="opening-skip" title="オープニングをスキップしてすぐに開始します">Skip</button>
+    </div>
+  </div>
+
+  <!-- ヘルプボタン -->
+  <button id="help-btn" title="キーボード操作を表示">?</button>
+  <div id="help-panel">
+    <h3>⌨️ キーボード操作</h3>
+    <ul>
+      <li><strong>Space</strong> 一時停止 / 再生</li>
+      <li><strong>← →</strong> 前後の画像に移動</li>
+      <li><strong>↑ ↓</strong> 速度変更</li>
+      <li><strong>L</strong> いいね</li>
+      <li><strong>Enter</strong> 画像を拡大表示</li>
+      <li><strong>Esc</strong> 閉じる</li>
+      <li><strong>T</strong> 写真一覧の表示切替</li>
+      <li><strong>F</strong> フィルター切替</li>
+    </ul>
+  </div>
+
+  <!-- Aboutボタン -->
+  <button id="about-btn" title="このプロジェクトについて">ⓘ</button>
+  <div id="about-panel">
+    <h3>About this project</h3>
+    <p>太郎坊チャレンジのスローガンは<br>「<strong>歴史を駆け抜け、未来を掴め！</strong>」</p>
+    <p>379段の石段を駆け上がる参加者一人ひとりの"あと30mの表情"を記録しました。</p>
+    <p>写っているのは、ただの顔ではなく、限界を超える瞬間の意思です。</p>
+    <p>撮影は一人のカメラマンが、マニュアルフォーカスで一日中追い続けました。すべてのチャレンジャーを撮り切れたわけではありませんが、写らなかった人の挑戦も、私たちの記憶の中に確かに刻まれています。</p>
+    <p>このスライドショーは、膨大なアーカイブからランダムに選ばれた50枚を表示します。ページをリロード、または🔄ボタンを押すたび、新たな50の表情と出会えます。</p>
+    <p class="tagline">これは、未来を掴もうとした全ての人の記録です。</p>
+  </div>
+
+  <div id="image-info">
+    <div id="counter">-/-</div>
+    <div id="filename">-</div>
+  </div>
+
+  <!-- フィルターボタン -->
+  <div id="filter-controls">
+    <button id="filter-all" class="active" title="全ての写真を表示します">📷</button>
+    <button id="filter-liked" title="いいねした写真だけを表示します">🤍</button>
+  </div>
+
+  <!-- いいねボタン -->
+  <button id="like-btn" title="この写真にいいね！（Lキー）">
+    🩶
+    <span id="like-count">0</span>
+  </button>
+
+  <!-- SNSシェアボタン -->
+  <div id="share-btns">
+    <button class="share-btn" id="share-twitter" title="この写真をTwitterでシェア">𝕏</button>
+    <button class="share-btn" id="share-facebook" title="この写真をFacebookでシェア">f</button>
+    <button class="share-btn" id="share-line" title="この写真をLINEでシェア">L</button>
+  </div>
+
+  <!-- サムネイル一覧 -->
+  <div id="thumbnails-container">
+    <div id="thumbnails-wrapper"></div>
+  </div>
+
+  <!-- モーダル（画像拡大） -->
+  <div id="modal">
+    <button id="modal-close">×</button>
+    <img id="modal-img" src="" alt="拡大画像">
+  </div>
+
+  <div id="hud">
+    <button id="thumbnails-toggle" title="全ての写真を一覧表示します（Tキー）">📸 写真一覧</button>
+    <div id="bgm-controls">
+      <button id="bgm-toggle" title="BGMをON/OFFします">🎵 BGM</button>
+      <input type="range" id="bgm-volume" min="0" max="100" value="50" title="BGMの音量を調整します">
+    </div>
+    <div id="effect-selector">
+      <select id="effect-select" title="画像切り替え時のエフェクトを選択します">
+        <option value="fade">フェード</option>
+        <option value="slide-left">スライド左</option>
+        <option value="slide-right">スライド右</option>
+        <option value="zoom">ズーム</option>
+        <option value="rotate">回転</option>
+        <option value="random">ランダム</option>
+      </select>
+    </div>
+    <div id="speed-controls">
+      <button id="btn-speed-slow" title="スローモード：5秒ごとに切り替え（↓キー）">🐢</button>
+      <button id="btn-speed-normal" class="active" title="通常モード：2.5秒ごとに切り替え">▶️</button>
+      <button id="btn-speed-fast" title="早送りモード：1秒ごとに切り替え（↑キー）">🐇</button>
+    </div>
+    <button id="btn-play" title="スライドショーを再生します（Spaceキー）">Play</button>
+    <button id="btn-pause" title="スライドショーを一時停止します（Spaceキー）">Pause</button>
+    <button id="btn-refresh" title="写真をシャッフルして最初から再生します">🔄 Shuffle</button>
+    <span id="info">loading…</span>
+  </div>
+
+  <!-- BGM用のオーディオ要素 -->
+  <audio id="bgm-audio" loop>
+    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+  // ===== 設定 =====
+  const FOLDER_ID = '1SjdlmWER2n6kRT0CB0zuO4OmIrnc9aR1';
+  const API_KEY = 'AIzaSyC-a2EarD9wlaV2w6CYdKl48fznBdzf9v0'; // ← Google Cloud ConsoleでAPIキーを作成して設定してください
+  // APIキーの取得方法: https://console.cloud.google.com/apis/credentials
+  // 必要なAPI: Google Drive API v3
+
+  const COUNT = 50;     // 表示枚数
+  const FADE_MS = 1200;  // フェード時間
+  const PRELOAD_COUNT = 2;
+
+  // スピード設定
+  const SPEEDS = {
+    slow: 6000,
+    normal: 3500,
+    fast: 1500
+  };
+
+  let SHOW_MS = SPEEDS.normal;
+  let currentSpeed = 'normal';
+
+  document.documentElement.style.setProperty('--fade-ms', FADE_MS);
+  document.documentElement.style.setProperty('--show-ms', SHOW_MS);
+
+  let slides = [], idx = 0, timer = null, running = false, progressTimer = null;
+  let fileList = []; // ファイル名保存用
+  let currentEffect = 'fade'; // 現在のエフェクト
+  let likedImages = new Set(); // いいねした画像のインデックス
+  let imageLikeCounts = {}; // 各画像のいいね数を保存 {index: count}
+  let bgmAudio = null; // BGMオーディオ要素
+  let allSlides = []; // 全スライドのバックアップ
+  let currentFilter = 'all'; // 現在のフィルター状態
+  let thumbnailsVisible = false; // サムネイル表示状態
+
+  // Google DriveフォルダIDから画像リストを取得（ページネーション対応）
+  async function fetchList(){
+    if (API_KEY === 'YOUR_GOOGLE_API_KEY_HERE') {
+      throw new Error('APIキーを設定してください');
+    }
+
+    let allFiles = [];
+    let pageToken = null;
+
+    // ページネーションで全ファイルを取得
+    do {
+      const params = {
+        q: `'${FOLDER_ID}' in parents and (mimeType contains 'image/')`,
+        key: API_KEY,
+        fields: 'files(id,name,mimeType,webContentLink),nextPageToken',
+        pageSize: '1000',
+        orderBy: 'name'
+      };
+
+      if (pageToken) {
+        params.pageToken = pageToken;
+      }
+
+      const url = `https://www.googleapis.com/drive/v3/files?` + new URLSearchParams(params);
+
+      console.log(`Fetching page... (current total: ${allFiles.length})`);
+
+      const res = await fetch(url);
+      if (!res.ok) {
+        const error = await res.json();
+        console.error('Google Drive API Error:', error);
+        throw new Error(`API Error: ${error.error?.message || 'Unknown error'}`);
+      }
+
+      const data = await res.json();
+      const files = data.files || [];
+
+      allFiles = allFiles.concat(files);
+      pageToken = data.nextPageToken;
+
+      console.log(`Fetched ${files.length} files. Total: ${allFiles.length}`);
+
+    } while (pageToken); // nextPageTokenがある限り続ける
+
+    console.log(`✅ All files fetched: ${allFiles.length} images`);
+
+    // ランダムにシャッフル
+    const shuffled = allFiles.sort(() => Math.random() - 0.5);
+
+    // 画像URLを生成（公開フォルダの場合）
+    const pick = shuffled.slice(0, COUNT).map(f => ({
+      url: `https://drive.google.com/thumbnail?id=${f.id}&sz=w2000`,
+      name: f.name,
+      id: f.id
+    }));
+
+    return { all: allFiles.length, pick };
+  }
+
+  function createSlides(list){
+    const stage = document.getElementById('stage');
+    stage.innerHTML = '';
+    slides = [];
+    fileList = list; // ファイル情報を保存
+    let added = 0;
+    list.forEach((f, i) => {
+      if (added >= COUNT) return;
+      const img = document.createElement('img');
+      img.src = f.url;
+      img.alt = f.name || `photo-${i+1}`;
+      img.className = 'slide';
+      img.dataset.index = i; // インデックスを保存
+      if (i >= PRELOAD_COUNT) img.loading = 'lazy';
+      img.onerror = () => { img.remove(); }; // 403等は除去
+      img.onload = () => { added++; };       // 読めたものだけカウント
+      stage.appendChild(img);
+      slides.push(img);
+    });
+    allSlides = [...slides]; // 全スライドを保存
+    createThumbnails(list); // サムネイルを生成
+  }
+
+  // サムネイル一覧を生成
+  function createThumbnails(list){
+    const wrapper = document.getElementById('thumbnails-wrapper');
+    wrapper.innerHTML = '';
+
+    list.forEach((f, i) => {
+      const thumb = document.createElement('img');
+      thumb.src = f.url;
+      thumb.alt = f.name || `thumb-${i+1}`;
+      thumb.className = 'thumbnail';
+      thumb.dataset.index = i;
+
+      // いいねした画像にはマーク
+      if (likedImages.has(i)) {
+        thumb.classList.add('liked');
+      }
+
+      // クリックで該当画像にジャンプ
+      thumb.onclick = () => jumpToSlide(i);
+
+      wrapper.appendChild(thumb);
+    });
+
+    updateActiveThumbnail();
+  }
+
+  // アクティブなサムネイルを更新
+  function updateActiveThumbnail(){
+    document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
+      thumb.classList.toggle('active', i === idx);
+      // いいね状態も更新
+      thumb.classList.toggle('liked', likedImages.has(i));
+    });
+  }
+
+  // サムネイル表示切り替え
+  function toggleThumbnails(){
+    thumbnailsVisible = !thumbnailsVisible;
+    const container = document.getElementById('thumbnails-container');
+    const btn = document.getElementById('thumbnails-toggle');
+    const hud = document.getElementById('hud');
+
+    container.classList.toggle('show', thumbnailsVisible);
+    hud.classList.toggle('raised', thumbnailsVisible);
+
+    // ボタンのテキストを切り替え
+    if (thumbnailsVisible) {
+      btn.textContent = '✕ 閉じる';
+      updateActiveThumbnail();
+      // アクティブなサムネイルにスクロール
+      const activeThumbnail = document.querySelector('.thumbnail.active');
+      if (activeThumbnail) {
+        activeThumbnail.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    } else {
+      btn.textContent = '📸 写真一覧';
+    }
+  }
+
+  // 指定したスライドにジャンプ
+  function jumpToSlide(targetIdx){
+    if (slides.length === 0 || targetIdx < 0 || targetIdx >= slides.length) return;
+
+    const wasRunning = running;
+    if (running) pause();
+
+    // 現在のスライドを非表示
+    const curr = slides[idx];
+
+    // 新しいスライドを表示
+    idx = targetIdx;
+
+    // クロスフェード
+    curr.classList.remove('active');
+    slides[idx].classList.add('active');
+    updateImageInfo();
+    updateActiveThumbnail();
+
+    if (wasRunning) play();
+  }
+
+  // 画像情報を更新
+  function updateImageInfo(){
+    document.getElementById('counter').textContent = `${idx + 1} / ${slides.length}`;
+    document.getElementById('filename').textContent = fileList[idx]?.name || '-';
+    updateLikeButton();
+    updateActiveThumbnail();
+  }
+
+  // いいねボタンの表示を更新
+  function updateLikeButton(){
+    const likeBtn = document.getElementById('like-btn');
+    const currentLikes = imageLikeCounts[idx] || 0;
+
+    if (likedImages.has(idx)) {
+      // いいね済み: 白いハート
+      likeBtn.innerHTML = '🤍<span id="like-count">' + currentLikes + '</span>';
+    } else {
+      // 未いいね: グレーのハート
+      likeBtn.innerHTML = '🩶<span id="like-count">' + currentLikes + '</span>';
+    }
+  }
+
+  // いいね機能
+  function toggleLike(){
+    const likeBtn = document.getElementById('like-btn');
+
+    if (likedImages.has(idx)) {
+      // いいねを取り消す
+      likedImages.delete(idx);
+      imageLikeCounts[idx] = Math.max(0, (imageLikeCounts[idx] || 0) - 1);
+    } else {
+      // いいねを追加
+      likedImages.add(idx);
+      imageLikeCounts[idx] = (imageLikeCounts[idx] || 0) + 1;
+      likeBtn.classList.add('liked');
+      setTimeout(() => likeBtn.classList.remove('liked'), 300);
+    }
+
+    updateLikeButton();
+    updateActiveThumbnail(); // サムネイルも更新
+
+    // LocalStorageに保存（リロード後も維持）
+    saveLikesToStorage();
+  }
+
+  // フィルター切り替え
+  function filterSlides(filter){
+    currentFilter = filter;
+    const wasRunning = running;
+    if (running) pause();
+
+    // ボタンの状態を更新
+    document.getElementById('filter-all').classList.toggle('active', filter === 'all');
+    document.getElementById('filter-liked').classList.toggle('active', filter === 'liked');
+
+    if (filter === 'liked') {
+      // いいねした写真だけを表示
+      const likedIndices = Array.from(likedImages);
+      if (likedIndices.length === 0) {
+        alert('まだいいねした写真がありません。\n気に入った写真にハートボタンを押してください！');
+        document.getElementById('filter-all').click();
+        return;
+      }
+
+      // いいねした写真のみに絞り込み
+      slides = allSlides.filter((_, i) => likedImages.has(i));
+      idx = 0;
+    } else {
+      // 全ての写真を表示
+      slides = [...allSlides];
+      idx = 0;
+    }
+
+    // スライドを再表示
+    document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+    if (slides[idx]) {
+      slides[idx].classList.add('active');
+      updateImageInfo();
+    }
+
+    if (wasRunning) play();
+  }
+
+  // いいね情報をLocalStorageに保存
+  function saveLikesToStorage(){
+    try {
+      localStorage.setItem('tarobo-liked-images', JSON.stringify(Array.from(likedImages)));
+      localStorage.setItem('tarobo-like-counts', JSON.stringify(imageLikeCounts));
+    } catch(e) {
+      console.log('LocalStorage保存エラー:', e);
+    }
+  }
+
+  // いいね情報をLocalStorageから読み込み
+  function loadLikesFromStorage(){
+    try {
+      const savedLiked = localStorage.getItem('tarobo-liked-images');
+      const savedCounts = localStorage.getItem('tarobo-like-counts');
+
+      if (savedLiked) {
+        likedImages = new Set(JSON.parse(savedLiked));
+      }
+      if (savedCounts) {
+        imageLikeCounts = JSON.parse(savedCounts);
+      }
+    } catch(e) {
+      console.log('LocalStorage読み込みエラー:', e);
+    }
+  }
+
+  // SNSシェア機能（現在表示中の画像をシェア）
+  function shareToSNS(platform){
+    if (slides.length === 0) return;
+
+    // 現在表示中の画像情報を取得
+    const currentImage = fileList[idx];
+    const imageUrl = encodeURIComponent(slides[idx].src);
+    const shareText = encodeURIComponent('石段を駆け抜け、未来を掴む｜太郎坊チャレンジ2025\n379段の挑戦者たち');
+    const hashtags = encodeURIComponent('太郎坊チャレンジ');
+
+    let url = '';
+
+    switch(platform) {
+      case 'twitter':
+        // Twitterは画像URLとハッシュタグを含める
+        url = `https://twitter.com/intent/tweet?text=${shareText}&hashtags=${hashtags}&url=${imageUrl}`;
+        break;
+      case 'facebook':
+        // Facebookは画像URLを共有
+        url = `https://www.facebook.com/sharer/sharer.php?u=${imageUrl}`;
+        break;
+      case 'line':
+        // LINEは画像URLとテキストを共有
+        url = `https://social-plugins.line.me/lineit/share?url=${imageUrl}&text=${shareText}`;
+        break;
+    }
+
+    if (url) {
+      window.open(url, '_blank', 'width=600,height=400');
+      // シェアしたことを視覚的にフィードバック
+      const btn = event.target.closest('.share-btn');
+      if (btn) {
+        btn.style.transform = 'scale(1.2)';
+        setTimeout(() => btn.style.transform = '', 300);
+      }
+    }
+  }
+
+  // 画像拡大表示
+  function openModal(){
+    if (slides.length === 0) return;
+    const modal = document.getElementById('modal');
+    const modalImg = document.getElementById('modal-img');
+    modalImg.src = slides[idx].src;
+    modal.classList.add('show');
+  }
+
+  function closeModal(){
+    const modal = document.getElementById('modal');
+    modal.classList.remove('show');
+  }
+
+  // エフェクトを適用
+  function applyEffect(element, effect){
+    // 既存のエフェクトクラスをクリア
+    element.classList.remove('effect-slide-left', 'effect-slide-right', 'effect-zoom', 'effect-rotate');
+
+    if (effect === 'random') {
+      const effects = ['fade', 'slide-left', 'slide-right', 'zoom', 'rotate'];
+      effect = effects[Math.floor(Math.random() * effects.length)];
+    }
+
+    if (effect !== 'fade') {
+      // エフェクトクラスを追加（activeの前に）
+      element.classList.add(`effect-${effect}`);
+      // ブラウザに初期状態を認識させるため、強制的にリフロー
+      void element.offsetWidth;
+    }
+  }
+
+  // 進捗バーを更新
+  function startProgressBar(){
+    if (progressTimer) clearInterval(progressTimer);
+    const fill = document.getElementById('progress-fill');
+    let progress = 0;
+    const step = 100 / (SHOW_MS / 100);
+
+    fill.style.width = '0%';
+    progressTimer = setInterval(() => {
+      progress += step;
+      if (progress >= 100) {
+        progress = 0;
+      }
+      fill.style.width = `${progress}%`;
+    }, 100);
+  }
+
+  function stopProgressBar(){
+    if (progressTimer) {
+      clearInterval(progressTimer);
+      progressTimer = null;
+    }
+    document.getElementById('progress-fill').style.width = '0%';
+  }
+
+
+  function play(){
+    if (running || slides.length === 0) return;
+    running = true;
+    if (!slides[idx].classList.contains('active')) {
+      slides[idx].classList.add('active');
+    }
+    updateImageInfo();
+    startProgressBar();
+
+    timer = setInterval(()=>{
+      const curr = slides[idx];
+      idx = (idx + 1) % slides.length;
+      const next = slides[idx];
+
+      // クロスフェード: 前の画像をフェードアウト、次の画像をフェードイン
+      console.log('Transition:', curr, 'to', next); // デバッグ用
+      curr.classList.remove('active');
+      next.classList.add('active');
+      updateImageInfo();
+    }, SHOW_MS);
+  }
+
+  function pause(){
+    running = false;
+    clearInterval(timer);
+    timer = null;
+    stopProgressBar();
+  }
+
+  // 次の画像へ
+  function nextSlide(){
+    if (slides.length === 0) return;
+    const wasRunning = running;
+    if (running) pause();
+
+    const curr = slides[idx];
+    idx = (idx + 1) % slides.length;
+    const next = slides[idx];
+
+    // クロスフェード
+    curr.classList.remove('active');
+    next.classList.add('active');
+    updateImageInfo();
+
+    if (wasRunning) play();
+  }
+
+  // 前の画像へ
+  function prevSlide(){
+    if (slides.length === 0) return;
+    const wasRunning = running;
+    if (running) pause();
+
+    const curr = slides[idx];
+    idx = (idx - 1 + slides.length) % slides.length;
+    const next = slides[idx];
+
+    // クロスフェード
+    curr.classList.remove('active');
+    next.classList.add('active');
+    updateImageInfo();
+
+    if (wasRunning) play();
+  }
+
+  // スピード変更
+  function changeSpeed(speed){
+    SHOW_MS = SPEEDS[speed];
+    currentSpeed = speed;
+    document.documentElement.style.setProperty('--show-ms', SHOW_MS);
+
+    // ボタンのactive状態を更新
+    document.querySelectorAll('#speed-controls button').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    document.getElementById(`btn-speed-${speed}`).classList.add('active');
+
+    // 再生中なら再起動
+    if (running) {
+      pause();
+      play();
+    }
+  }
+
+  async function init(){
+    try{
+      // LocalStorageからいいね情報を読み込み
+      loadLikesFromStorage();
+
+      const {all, pick} = await fetchList();
+      createSlides(pick);
+      document.getElementById('info').textContent = `source=${all} / showing=${pick.length}`;
+      play();
+    }catch(e){
+      document.getElementById('info').textContent = '読み込みに失敗しました';
+      console.error(e);
+    }
+  }
+
+  // BGM機能
+  function initBGM(){
+    bgmAudio = document.getElementById('bgm-audio');
+    bgmAudio.volume = 0.5;
+
+    document.getElementById('bgm-toggle').onclick = () => {
+      const btn = document.getElementById('bgm-toggle');
+      if (bgmAudio.paused) {
+        bgmAudio.play().catch(e => console.log('BGM再生エラー:', e));
+        btn.classList.add('playing');
+        btn.textContent = '🎵 BGM停止';
+      } else {
+        bgmAudio.pause();
+        btn.classList.remove('playing');
+        btn.textContent = '🎵 BGM';
+      }
+    };
+
+    document.getElementById('bgm-volume').oninput = (e) => {
+      bgmAudio.volume = e.target.value / 100;
+    };
+  }
+
+  // ボタンイベント
+  document.getElementById('btn-play').onclick = play;
+  document.getElementById('btn-pause').onclick = pause;
+  document.getElementById('btn-refresh').onclick = () => { pause(); init(); };
+
+  // スピードボタン
+  document.getElementById('btn-speed-slow').onclick = () => changeSpeed('slow');
+  document.getElementById('btn-speed-normal').onclick = () => changeSpeed('normal');
+  document.getElementById('btn-speed-fast').onclick = () => changeSpeed('fast');
+
+  // いいねボタン
+  document.getElementById('like-btn').onclick = toggleLike;
+
+  // SNSシェアボタン
+  document.getElementById('share-twitter').onclick = () => shareToSNS('twitter');
+  document.getElementById('share-facebook').onclick = () => shareToSNS('facebook');
+  document.getElementById('share-line').onclick = () => shareToSNS('line');
+
+  // モーダル
+  document.getElementById('modal').onclick = closeModal;
+  document.getElementById('modal-close').onclick = closeModal;
+
+  // エフェクト選択
+  document.getElementById('effect-select').onchange = (e) => {
+    currentEffect = e.target.value;
+  };
+
+  // サムネイル表示切り替え
+  document.getElementById('thumbnails-toggle').onclick = toggleThumbnails;
+
+  // フィルターボタン
+  document.getElementById('filter-all').onclick = () => filterSlides('all');
+  document.getElementById('filter-liked').onclick = () => filterSlides('liked');
+
+  // オープニング画面
+  function initOpening(){
+    const opening = document.getElementById('opening');
+
+    // スタートボタン
+    document.getElementById('opening-start').onclick = () => {
+      opening.classList.add('hide');
+      setTimeout(() => opening.style.display = 'none', 800);
+    };
+
+    // Skipボタン
+    document.getElementById('opening-skip').onclick = () => {
+      opening.classList.add('hide');
+      setTimeout(() => opening.style.display = 'none', 800);
+    };
+  }
+
+  // ヘルプボタン
+  let helpVisible = false;
+
+  document.getElementById('help-btn').onclick = () => {
+    helpVisible = !helpVisible;
+    const panel = document.getElementById('help-panel');
+    panel.classList.toggle('show', helpVisible);
+
+    // Aboutパネルが開いていたら閉じる
+    if (helpVisible && aboutVisible) {
+      aboutVisible = false;
+      document.getElementById('about-panel').classList.remove('show');
+    }
+  };
+
+  // ヘルプパネル外をクリックしたら閉じる
+  document.addEventListener('click', (e) => {
+    const helpBtn = document.getElementById('help-btn');
+    const helpPanel = document.getElementById('help-panel');
+    const aboutBtn = document.getElementById('about-btn');
+    const aboutPanel = document.getElementById('about-panel');
+
+    if (helpVisible && !helpBtn.contains(e.target) && !helpPanel.contains(e.target)) {
+      helpVisible = false;
+      helpPanel.classList.remove('show');
+    }
+
+    if (aboutVisible && !aboutBtn.contains(e.target) && !aboutPanel.contains(e.target)) {
+      aboutVisible = false;
+      aboutPanel.classList.remove('show');
+    }
+  });
+
+  // Aboutボタン
+  let aboutVisible = false;
+
+  document.getElementById('about-btn').onclick = () => {
+    aboutVisible = !aboutVisible;
+    const panel = document.getElementById('about-panel');
+    panel.classList.toggle('show', aboutVisible);
+
+    // ヘルプパネルが開いていたら閉じる
+    if (aboutVisible && helpVisible) {
+      helpVisible = false;
+      document.getElementById('help-panel').classList.remove('show');
+    }
+  };
+
+  // キーボード操作
+  document.addEventListener('keydown', (e) => {
+    switch(e.key) {
+      case ' ':           // スペースキー: 一時停止/再生
+        e.preventDefault();
+        if (running) pause();
+        else play();
+        break;
+      case 'ArrowRight':  // 右矢印: 次の画像
+        e.preventDefault();
+        nextSlide();
+        break;
+      case 'ArrowLeft':   // 左矢印: 前の画像
+        e.preventDefault();
+        prevSlide();
+        break;
+      case 'ArrowUp':     // 上矢印: 速度アップ
+        e.preventDefault();
+        if (currentSpeed === 'slow') changeSpeed('normal');
+        else if (currentSpeed === 'normal') changeSpeed('fast');
+        break;
+      case 'ArrowDown':   // 下矢印: 速度ダウン
+        e.preventDefault();
+        if (currentSpeed === 'fast') changeSpeed('normal');
+        else if (currentSpeed === 'normal') changeSpeed('slow');
+        break;
+      case 'l':           // Lキー: いいね
+        e.preventDefault();
+        toggleLike();
+        break;
+      case 'Enter':       // Enterキー: 画像拡大
+        e.preventDefault();
+        if (!document.getElementById('modal').classList.contains('show')) {
+          openModal();
+        } else {
+          closeModal();
+        }
+        break;
+      case 'Escape':      // Escキー: モーダルを閉じる
+        e.preventDefault();
+        closeModal();
+        break;
+      case 't':           // Tキー: サムネイル表示切り替え
+        e.preventDefault();
+        toggleThumbnails();
+        break;
+      case 'f':           // Fキー: フィルター切り替え
+        e.preventDefault();
+        if (currentFilter === 'all') {
+          filterSlides('liked');
+        } else {
+          filterSlides('all');
+        }
+        break;
+    }
+  });
+
+  // 画像クリックで拡大表示
+  const stage = document.getElementById('stage');
+  stage.addEventListener('click', (e) => {
+    // シングルクリックで拡大表示
+    if (e.detail === 1) {
+      setTimeout(() => {
+        if (e.detail === 1) openModal();
+      }, 200);
+    }
+  });
+
+  // ダブルクリック/ダブルタップでフルスクリーン
+  stage.addEventListener('dblclick', ()=> {
+    if (!document.fullscreenElement) stage.requestFullscreen().catch(()=>{});
+    else document.exitFullscreen().catch(()=>{});
+  });
+
+  // 初期化
+  initOpening();
+  initBGM();
+  init();
+  </script>
+</body>
+</html>
