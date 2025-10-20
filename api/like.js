@@ -1,15 +1,7 @@
 // Vercel Serverless Function: 写真へのいいね機能
 // Supabaseを使用して全ユーザーのいいね数を集計
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-
-// 環境変数チェック
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  throw new Error('Environment variables SUPABASE_URL and SUPABASE_ANON_KEY are required');
-}
+import { createClient } from '@supabase/supabase-js';
 
 // ユーザー識別用のフィンガープリントを生成（IPアドレスベース）
 function getUserFingerprint(req) {
@@ -39,6 +31,18 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // 環境変数チェック
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error('Missing environment variables:', { SUPABASE_URL: !!SUPABASE_URL, SUPABASE_ANON_KEY: !!SUPABASE_ANON_KEY });
+    return res.status(500).json({
+      success: false,
+      error: 'Server configuration error: Missing Supabase credentials'
+    });
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
