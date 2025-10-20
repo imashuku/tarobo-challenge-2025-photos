@@ -491,18 +491,21 @@
         height:70px;
       }
 
-      /* いいねボタン */
+      /* 右側ボタン群の配置を再計算 */
+      /* HUDの高さを考慮: 約60px */
+
+      /* いいねボタン（一番下） */
       #like-btn{
         width:50px;
         height:50px;
         font-size:24px;
-        bottom:90px;
+        bottom:70px;
         right:6px;
       }
 
-      /* SNSシェアボタン */
+      /* SNSシェアボタン（いいねの上、3つ縦に並ぶ: 50px×3 + gap 6px×2 = 162px） */
       #share-btns{
-        bottom:150px;
+        bottom:126px; /* 70px(いいねbottom) + 50px(いいねheight) + 6px(gap) */
         right:6px;
       }
       .share-btn{
@@ -511,8 +514,11 @@
         font-size:18px;
       }
 
-      /* フィルターボタン */
+      /* フィルターボタン（中央ではなく、SNSボタンの上に配置） */
       #filter-controls{
+        top:auto;
+        bottom:294px; /* 126px(SNSbottom) + 162px(SNS全体height) + 6px(gap) */
+        transform:none;
         right:6px;
       }
       #filter-all, #filter-liked{
