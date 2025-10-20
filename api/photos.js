@@ -1,9 +1,14 @@
 // Vercel Serverless Function: Google Drive APIからランダムな写真リストを取得
 // キャッシュを使用して、429エラーを防ぎます
 
-const FOLDER_ID = process.env.FOLDER_ID || '1SjdlmWER2n6kRT0CB0zuO4OmIrnc9aR1';
-const API_KEY = process.env.API_KEY || 'AIzaSyAa9kU803qNBjvl0BY47ZATfJh5PzI4ELo';
+const FOLDER_ID = process.env.FOLDER_ID;
+const API_KEY = process.env.API_KEY;
 const COUNT = 50; // 表示枚数
+
+// 環境変数チェック
+if (!FOLDER_ID || !API_KEY) {
+  throw new Error('Environment variables FOLDER_ID and API_KEY are required');
+}
 
 // キャッシュ用のグローバル変数
 let cache = null;
