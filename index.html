@@ -1007,6 +1007,19 @@
     modal.classList.remove('show');
   }
 
+  // モーダルで次/前の画像に遷移
+  function showNextInModal(){
+    nextSlide();
+    const modalImg = document.getElementById('modal-img');
+    modalImg.src = slides[idx].src;
+  }
+
+  function showPrevInModal(){
+    prevSlide();
+    const modalImg = document.getElementById('modal-img');
+    modalImg.src = slides[idx].src;
+  }
+
   // エフェクトを適用
   function applyEffect(element, effect){
     // 既存のエフェクトクラスをクリア
@@ -1188,8 +1201,44 @@
   document.getElementById('share-line').onclick = () => shareToSNS('line');
 
   // モーダル
-  document.getElementById('modal').onclick = closeModal;
+  // モーダルのクリック・タッチイベント
+  const modal = document.getElementById('modal');
+  const modalImg = document.getElementById('modal-img');
+
+  // モーダル背景クリックで閉じる
+  modal.onclick = (e) => {
+    if (e.target === modal) closeModal();
+  };
   document.getElementById('modal-close').onclick = closeModal;
+
+  // フリック検出用の変数
+  let touchStartX = 0;
+  let touchEndX = 0;
+  const SWIPE_THRESHOLD = 50; // スワイプと判定する最小距離（px）
+
+  // モーダル画像にフリック機能を追加
+  modalImg.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+
+  modalImg.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+  }, { passive: true });
+
+  function handleSwipe() {
+    const diff = touchStartX - touchEndX;
+
+    if (Math.abs(diff) > SWIPE_THRESHOLD) {
+      if (diff > 0) {
+        // 左フリック → 次の画像
+        showNextInModal();
+      } else {
+        // 右フリック → 前の画像
+        showPrevInModal();
+      }
+    }
+  }
 
   // エフェクト選択
   // エフェクトセレクターは削除済み（常にフェード）
