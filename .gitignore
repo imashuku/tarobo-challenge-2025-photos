@@ -17,3 +17,6 @@ __pycache__/
 # Environment variables
 .env
 .env.local
+
+# Config file with API keys (DO NOT COMMIT)
+config.js

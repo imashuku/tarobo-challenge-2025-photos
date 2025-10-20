@@ -367,6 +367,9 @@
   </style>
 </head>
 <body>
+  <!-- Config file (not committed to GitHub) -->
+  <script src="config.js"></script>
+
   <div id="progress-bar"><div id="progress-fill"></div></div>
   <div id="stage" aria-label="スライドショー領域"></div>
 
@@ -480,10 +483,10 @@
 
   <script>
   // ===== 設定 =====
-  const FOLDER_ID = '1SjdlmWER2n6kRT0CB0zuO4OmIrnc9aR1';
-  const API_KEY = 'AIzaSyC-a2EarD9wlaV2w6CYdKl48fznBdzf9v0'; // ← Google Cloud ConsoleでAPIキーを作成して設定してください
-  // APIキーの取得方法: https://console.cloud.google.com/apis/credentials
-  // 必要なAPI: Google Drive API v3
+  // config.js から読み込まれます（GitHubにはコミットされません）
+  // セットアップ方法: config.example.js を config.js にコピーして編集してください
+  const FOLDER_ID = CONFIG.FOLDER_ID;
+  const API_KEY = CONFIG.API_KEY;
 
   const COUNT = 50;     // 表示枚数
   const FADE_MS = 1200;  // フェード時間

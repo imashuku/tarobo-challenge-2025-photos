@@ -31,10 +31,46 @@
 
 ## セットアップ
 
-1. Google Drive API キーを取得
-2. `index.html` の `API_KEY` に設定
-3. `FOLDER_ID` にGoogle DriveフォルダIDを設定
-4. ブラウザで `index.html` を開く
+### 1. リポジトリをクローン
+```bash
+git clone https://github.com/imashuku/tarobo-challenge-2025-photos.git
+cd tarobo-challenge-2025-photos
+```
+
+### 2. Google Drive API キーを取得
+1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
+2. 新しいプロジェクトを作成（または既存のものを使用）
+3. Google Drive API を有効化
+4. 「認証情報」→「APIキーを作成」
+5. **重要**: APIキーに制限をかける
+   - 「HTTPリファラー」制限を設定し、あなたのドメインのみを許可
+   - 例: `https://yourdomain.com/*`
+
+### 3. 設定ファイルを作成
+```bash
+cp config.example.js config.js
+```
+
+`config.js` を編集して、実際の値を入力：
+```javascript
+const CONFIG = {
+  FOLDER_ID: 'あなたのGoogle DriveフォルダID',
+  API_KEY: 'あなたのGoogle API Key'
+};
+```
+
+**注意**: `config.js` はGitHubにコミットされません（`.gitignore`に含まれています）
+
+### 4. ブラウザで開く
+```bash
+open index.html
+```
+
+または、ローカルサーバーを起動：
+```bash
+python3 -m http.server 8000
+# http://localhost:8000 にアクセス
+```
 
 ## キーボード操作
 
@@ -53,12 +89,21 @@
 
 ```
 .
-├── index.html              # メインファイル（HTML/CSS/JS統合）
-├── tarobo-logo-white.png   # ロゴ（透過PNG、白文字）
+├── index.html                   # メインファイル（HTML/CSS/JS統合）
+├── config.example.js            # 設定ファイルのテンプレート
+├── config.js                    # 実際の設定（.gitignoreに含まれる）
+├── tarobo-logo-white.png        # ロゴ（透過PNG、白文字）
 ├── TAROBO CHALLENGE モバイル用.jpg  # 元画像（青文字）
-├── message.md              # プロジェクトの理念
-└── README.md               # このファイル
+├── message.md                   # プロジェクトの理念
+├── .gitignore                   # Git除外設定
+└── README.md                    # このファイル
 ```
+
+## セキュリティについて
+
+- **API Key**: `config.js` に保存され、GitHubにはコミットされません
+- **推奨**: Google Cloud ConsoleでAPIキーに「HTTPリファラー制限」を設定してください
+- **Google Driveフォルダ**: 公開設定の場合、誰でもアクセス可能です（必要に応じて制限してください）
 
 ## クレジット
 
