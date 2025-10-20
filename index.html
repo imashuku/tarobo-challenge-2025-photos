@@ -295,15 +295,7 @@
     #modal-close:hover{ background:rgba(255,255,255,0.3); }
 
     /* エフェクト選択 */
-    #effect-selector{
-      display:flex;
-    }
-    #effect-selector select{
-      background:#111; color:#fff; border:1px solid #666;
-      padding:6px 8px; border-radius:8px; cursor:pointer;
-      font:12px/1.4 system-ui,-apple-system,Segoe UI,Roboto;
-    }
-    #effect-selector select:hover{ border-color:#888; background:#333; }
+    /* エフェクトセレクターは削除済み */
 
     /* BGMコントロール */
     #bgm-controls{
@@ -617,25 +609,12 @@
   </div>
 
   <div id="hud">
-    <button id="thumbnails-toggle" title="全ての写真を一覧表示します（Tキー）">📸 写真一覧</button>
     <div id="bgm-controls">
       <button id="bgm-toggle" title="BGMをON/OFFします">🎵 BGM</button>
       <input type="range" id="bgm-volume" min="0" max="100" value="50" title="BGMの音量を調整します">
     </div>
-    <div id="effect-selector">
-      <select id="effect-select" title="画像切り替え時のエフェクトを選択します">
-        <option value="fade">フェード</option>
-        <option value="slide-left">スライド左</option>
-        <option value="slide-right">スライド右</option>
-        <option value="zoom">ズーム</option>
-        <option value="rotate">回転</option>
-        <option value="random">ランダム</option>
-      </select>
-    </div>
-    <button id="btn-play" title="スライドショーを再生します（Spaceキー）">Play</button>
-    <button id="btn-pause" title="スライドショーを一時停止します（Spaceキー）">Pause</button>
-    <button id="btn-refresh" title="写真をシャッフルして最初から再生します">🔄 Shuffle</button>
-    <span id="info">loading…</span>
+    <button id="thumbnails-toggle" title="全ての写真を一覧表示します（Tキー）">📸 写真一覧</button>
+    <span id="info">source=1146 / showing=50</span>
   </div>
 
   <!-- BGM用のオーディオ要素 -->
@@ -1195,9 +1174,7 @@
   }
 
   // ボタンイベント
-  document.getElementById('btn-play').onclick = play;
-  document.getElementById('btn-pause').onclick = pause;
-  document.getElementById('btn-refresh').onclick = () => { pause(); init(); };
+  // Play/Pause/Shuffleボタンは削除済み（画面タップで再生/一時停止）
 
   // スピードボタン
   // 速度コントロールは削除済み
@@ -1215,9 +1192,7 @@
   document.getElementById('modal-close').onclick = closeModal;
 
   // エフェクト選択
-  document.getElementById('effect-select').onchange = (e) => {
-    currentEffect = e.target.value;
-  };
+  // エフェクトセレクターは削除済み（常にフェード）
 
   // サムネイル表示切り替え
   document.getElementById('thumbnails-toggle').onclick = toggleThumbnails;
