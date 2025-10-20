@@ -65,7 +65,7 @@ function getRandomPhotos(files, count) {
 /**
  * Vercel Serverless Function のエントリーポイント
  */
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   try {
     // CORS設定
     res.setHeader('Access-Control-Allow-Origin', '*');
