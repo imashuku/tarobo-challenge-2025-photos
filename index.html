@@ -124,13 +124,19 @@
 
     /* Aboutボタン */
     #about-btn{
-      position:fixed; top:12px; left:60px; z-index:10;
-      width:40px; height:40px; border-radius:50%;
+      position:fixed; top:12px; left:80px; z-index:10;
+      width:60px; height:60px; border-radius:10px;
       background:rgba(0,0,0,0.35); border:1px solid #666;
-      color:#fff; font-size:20px; cursor:pointer;
+      color:#fff; font-size:24px; cursor:pointer;
       backdrop-filter: blur(6px);
-      transition: all 0.3s ease;
+      transition: all 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
       display:flex; align-items:center; justify-content:center;
+      opacity: 1;
+    }
+    #about-btn.hidden{
+      opacity: 0;
+      transform: translateY(-20px);
+      pointer-events: none;
     }
     #about-btn:hover{
       transform:scale(1.05);
@@ -450,6 +456,15 @@
       #help-btn{
         top:6px;
         left:6px;
+        width:50px;
+        height:50px;
+        font-size:20px;
+      }
+
+      /* Aboutボタン */
+      #about-btn{
+        top:6px;
+        left:62px;
         width:50px;
         height:50px;
         font-size:20px;
@@ -1365,6 +1380,7 @@
     document.getElementById('like-btn').classList.add('hidden');
     document.getElementById('share-btns').classList.add('hidden');
     document.getElementById('help-btn').classList.add('hidden');
+    document.getElementById('about-btn').classList.add('hidden');
     document.getElementById('filter-controls').classList.add('hidden');
   }
 
@@ -1374,6 +1390,7 @@
     document.getElementById('like-btn').classList.remove('hidden');
     document.getElementById('share-btns').classList.remove('hidden');
     document.getElementById('help-btn').classList.remove('hidden');
+    document.getElementById('about-btn').classList.remove('hidden');
     document.getElementById('filter-controls').classList.remove('hidden');
 
     // タイマーをリセット
