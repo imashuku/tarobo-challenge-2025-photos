@@ -887,27 +887,65 @@
     }
   }
 
-  // いいね機能
-  function toggleLike(){
+  // いいね機能（Supabase連携）
+  async function toggleLike(){
     const likeBtn = document.getElementById('like-btn');
+    const currentFile = fileList[idx];
 
-    if (likedImages.has(idx)) {
-      // いいねを取り消す
-      likedImages.delete(idx);
-      imageLikeCounts[idx] = Math.max(0, (imageLikeCounts[idx] || 0) - 1);
-    } else {
-      // いいねを追加
-      likedImages.add(idx);
-      imageLikeCounts[idx] = (imageLikeCounts[idx] || 0) + 1;
-      likeBtn.classList.add('liked');
-      setTimeout(() => likeBtn.classList.remove('liked'), 300);
+    if (!currentFile || !currentFile.id) {
+      console.error('No file selected');
+      return;
     }
 
-    updateLikeButton();
-    updateActiveThumbnail(); // サムネイルも更新
+    const photoId = currentFile.id;
+    const isLiked = likedImages.has(idx);
 
-    // LocalStorageに保存（リロード後も維持）
-    saveLikesToStorage();
+    try {
+      if (isLiked) {
+        // いいねを取り消す
+        const response = await fetch(`/api/like?photoId=${photoId}`, {
+          method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          likedImages.delete(idx);
+          imageLikeCounts[idx] = result.count || 0;
+        }
+      } else {
+        // いいねを追加
+        const response = await fetch('/api/like', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ photoId })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          likedImages.add(idx);
+          imageLikeCounts[idx] = result.count || 1;
+          likeBtn.classList.add('liked');
+          setTimeout(() => likeBtn.classList.remove('liked'), 300);
+        }
+      }
+
+      updateLikeButton();
+      updateActiveThumbnail();
+      saveLikesToStorage(); // ローカルにもバックアップ
+
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
+      // エラー時はローカルのみ更新（オフライン対応）
+      if (isLiked) {
+        likedImages.delete(idx);
+      } else {
+        likedImages.add(idx);
+      }
+      updateLikeButton();
+      saveLikesToStorage();
+    }
   }
 
   // フィルター切り替え
