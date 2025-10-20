@@ -294,6 +294,25 @@
     }
     #modal-close:hover{ background:rgba(255,255,255,0.3); }
 
+    /* モーダル内のいいねボタン */
+    #modal-like-btn{
+      position:absolute; bottom:20px; right:20px;
+      width:60px; height:60px; border-radius:10px;
+      background:rgba(0,0,0,0.5); border:1px solid #666;
+      color:#fff; font-size:30px; cursor:pointer;
+      backdrop-filter: blur(6px);
+      transition: all 0.3s ease;
+      display:flex; align-items:center; justify-content:center;
+    }
+    #modal-like-btn:hover{
+      transform:scale(1.05);
+      background:rgba(0,0,0,0.7);
+      border-color:#888;
+    }
+    #modal-like-btn.liked{
+      animation: heartBeat 0.3s ease;
+    }
+
     /* エフェクト選択 */
     /* エフェクトセレクターは削除済み */
 
@@ -605,6 +624,7 @@
   <!-- モーダル（画像拡大） -->
   <div id="modal">
     <button id="modal-close">×</button>
+    <button id="modal-like-btn">🤍</button>
     <img id="modal-img" src="" alt="拡大画像">
   </div>
 
@@ -1000,6 +1020,20 @@
     const modalImg = document.getElementById('modal-img');
     modalImg.src = slides[idx].src;
     modal.classList.add('show');
+    updateModalLikeButton();
+  }
+
+  // モーダル内のいいねボタンの表示を更新
+  function updateModalLikeButton(){
+    const modalLikeBtn = document.getElementById('modal-like-btn');
+    const currentFile = fileList[idx];
+    if (currentFile && likedImages.has(currentFile.id)) {
+      modalLikeBtn.textContent = '❤️';
+      modalLikeBtn.classList.add('liked');
+    } else {
+      modalLikeBtn.textContent = '🤍';
+      modalLikeBtn.classList.remove('liked');
+    }
   }
 
   function closeModal(){
@@ -1012,12 +1046,14 @@
     nextSlide();
     const modalImg = document.getElementById('modal-img');
     modalImg.src = slides[idx].src;
+    updateModalLikeButton();
   }
 
   function showPrevInModal(){
     prevSlide();
     const modalImg = document.getElementById('modal-img');
     modalImg.src = slides[idx].src;
+    updateModalLikeButton();
   }
 
   // エフェクトを適用
@@ -1210,6 +1246,13 @@
     if (e.target === modal) closeModal();
   };
   document.getElementById('modal-close').onclick = closeModal;
+
+  // モーダル内のいいねボタン
+  document.getElementById('modal-like-btn').onclick = (e) => {
+    e.stopPropagation(); // モーダルが閉じないようにする
+    toggleLike();
+    updateModalLikeButton();
+  };
 
   // フリック検出用の変数
   let touchStartX = 0;
