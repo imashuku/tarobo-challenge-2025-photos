@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/photos.js": {
-      "maxDuration": 10
-    }
-  }
-}
