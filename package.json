@@ -2,6 +2,5 @@
   "name": "tarobo-challenge-2025-photos",
   "version": "1.0.0",
   "description": "太郎坊チャレンジ2025 フォトスライドショー",
-  "private": true,
-  "type": "module"
+  "private": true
 }
