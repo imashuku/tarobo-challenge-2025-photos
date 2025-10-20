@@ -69,13 +69,7 @@
       transition:width 100ms linear;
     }
 
-    /* スピードコントロール */
-    #speed-controls{
-      display:flex; gap:4px;
-    }
-    #speed-controls button{
-      min-width:45px;
-    }
+    /* スピードコントロールは削除済み */
 
     /* キーボードヘルプ */
     #help-btn{
@@ -433,9 +427,7 @@
         font-size:11px;
         border-radius:6px;
       }
-      #speed-controls button{
-        min-width:38px;
-      }
+      /* スピードコントロールは削除済み */
 
       /* 画像情報を小さく */
       #image-info{
@@ -569,7 +561,6 @@
     <ul>
       <li><strong>Space</strong> 一時停止 / 再生</li>
       <li><strong>← →</strong> 前後の画像に移動</li>
-      <li><strong>↑ ↓</strong> 速度変更</li>
       <li><strong>L</strong> いいね</li>
       <li><strong>Enter</strong> 画像を拡大表示</li>
       <li><strong>Esc</strong> 閉じる</li>
@@ -640,11 +631,6 @@
         <option value="rotate">回転</option>
         <option value="random">ランダム</option>
       </select>
-    </div>
-    <div id="speed-controls">
-      <button id="btn-speed-slow" title="スローモード：5秒ごとに切り替え（↓キー）">🐢</button>
-      <button id="btn-speed-normal" class="active" title="通常モード：2.5秒ごとに切り替え">▶️</button>
-      <button id="btn-speed-fast" title="早送りモード：1秒ごとに切り替え（↑キー）">🐇</button>
     </div>
     <button id="btn-play" title="スライドショーを再生します（Spaceキー）">Play</button>
     <button id="btn-pause" title="スライドショーを一時停止します（Spaceキー）">Pause</button>
@@ -1214,9 +1200,7 @@
   document.getElementById('btn-refresh').onclick = () => { pause(); init(); };
 
   // スピードボタン
-  document.getElementById('btn-speed-slow').onclick = () => changeSpeed('slow');
-  document.getElementById('btn-speed-normal').onclick = () => changeSpeed('normal');
-  document.getElementById('btn-speed-fast').onclick = () => changeSpeed('fast');
+  // 速度コントロールは削除済み
 
   // いいねボタン
   document.getElementById('like-btn').onclick = toggleLike;
@@ -1323,16 +1307,7 @@
         e.preventDefault();
         prevSlide();
         break;
-      case 'ArrowUp':     // 上矢印: 速度アップ
-        e.preventDefault();
-        if (currentSpeed === 'slow') changeSpeed('normal');
-        else if (currentSpeed === 'normal') changeSpeed('fast');
-        break;
-      case 'ArrowDown':   // 下矢印: 速度ダウン
-        e.preventDefault();
-        if (currentSpeed === 'fast') changeSpeed('normal');
-        else if (currentSpeed === 'normal') changeSpeed('slow');
-        break;
+      // 速度コントロールのキーボードショートカットは削除済み
       case 'l':           // Lキー: いいね
         e.preventDefault();
         toggleLike();
