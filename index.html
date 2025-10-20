@@ -245,10 +245,12 @@
       100% { transform: scale(1); }
     }
     #like-count{
-      position:absolute; top:-6px; right:-6px;
-      background:rgba(0,102,204,0.9); color:#fff; font-size:11px; font-weight:bold;
-      padding:2px 5px; border-radius:8px; min-width:18px; text-align:center;
-      border:1px solid rgba(255,255,255,0.2);
+      position:absolute; top:-8px; right:-8px;
+      background:rgba(255,50,50,0.95); color:#fff; font-size:13px; font-weight:bold;
+      padding:3px 7px; border-radius:12px; min-width:22px; text-align:center;
+      border:2px solid rgba(255,255,255,0.4);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     }
 
     /* SNSシェアボタン */
@@ -871,24 +873,56 @@
   }
 
   // 画像情報を更新
-  function updateImageInfo(){
+  async function updateImageInfo(){
     document.getElementById('counter').textContent = `${idx + 1} / ${slides.length}`;
     document.getElementById('filename').textContent = fileList[idx]?.name || '-';
+
+    // APIからいいね数を取得（バックグラウンドで実行）
+    const currentFile = fileList[idx];
+    if (currentFile && currentFile.id) {
+      fetchLikeCount(currentFile.id, idx);
+    }
+
     updateLikeButton();
     updateActiveThumbnail();
+  }
+
+  // APIからいいね数を取得
+  async function fetchLikeCount(photoId, imageIdx){
+    try {
+      const response = await fetch(`/api/like?photoId=${photoId}`);
+      const result = await response.json();
+
+      if (result.success) {
+        imageLikeCounts[imageIdx] = result.count || 0;
+        if (result.liked) {
+          likedImages.add(imageIdx);
+        } else {
+          likedImages.delete(imageIdx);
+        }
+        // 現在表示中の画像なら更新
+        if (imageIdx === idx) {
+          updateLikeButton();
+          updateActiveThumbnail();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch like count:', error);
+    }
   }
 
   // いいねボタンの表示を更新
   function updateLikeButton(){
     const likeBtn = document.getElementById('like-btn');
+    const currentFile = fileList[idx];
     const currentLikes = imageLikeCounts[idx] || 0;
 
     if (likedImages.has(idx)) {
-      // いいね済み: 白いハート
-      likeBtn.innerHTML = '🤍<span id="like-count">' + currentLikes + '</span>';
+      // いいね済み: 赤いハート
+      likeBtn.innerHTML = '❤️<span id="like-count">' + (currentLikes > 0 ? currentLikes : '') + '</span>';
     } else {
-      // 未いいね: グレーのハート
-      likeBtn.innerHTML = '🩶<span id="like-count">' + currentLikes + '</span>';
+      // 未いいね: 白いハート
+      likeBtn.innerHTML = '🤍<span id="like-count">' + (currentLikes > 0 ? currentLikes : '') + '</span>';
     }
   }
 
@@ -934,9 +968,13 @@
           likeBtn.classList.add('liked');
           setTimeout(() => likeBtn.classList.remove('liked'), 600);
 
-          // バイブレーション（スマホのみ）
-          if (navigator.vibrate) {
-            navigator.vibrate([30, 50, 30]); // パターン: 30ms振動, 50ms停止, 30ms振動
+          // バイブレーション（Androidのみ対応、iOSは非対応）
+          try {
+            if ('vibrate' in navigator) {
+              navigator.vibrate([50]); // シンプルに50ms振動
+            }
+          } catch (e) {
+            console.log('Vibration not supported');
           }
         }
       }
@@ -955,9 +993,13 @@
         likeBtn.classList.add('liked');
         setTimeout(() => likeBtn.classList.remove('liked'), 600);
 
-        // バイブレーション（スマホのみ）
-        if (navigator.vibrate) {
-          navigator.vibrate([30, 50, 30]);
+        // バイブレーション（Androidのみ対応、iOSは非対応）
+        try {
+          if ('vibrate' in navigator) {
+            navigator.vibrate([50]);
+          }
+        } catch (e) {
+          console.log('Vibration not supported');
         }
       }
       updateLikeButton();
