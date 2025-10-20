@@ -917,12 +917,17 @@
     const currentFile = fileList[idx];
     const currentLikes = imageLikeCounts[idx] || 0;
 
+    console.log(`updateLikeButton: idx=${idx}, likes=${currentLikes}, liked=${likedImages.has(idx)}`);
+
+    // いいね数が0の場合はバッジを非表示
+    const countBadge = currentLikes > 0 ? `<span id="like-count">${currentLikes}</span>` : '';
+
     if (likedImages.has(idx)) {
       // いいね済み: 赤いハート
-      likeBtn.innerHTML = '❤️<span id="like-count">' + (currentLikes > 0 ? currentLikes : '') + '</span>';
+      likeBtn.innerHTML = `❤️${countBadge}`;
     } else {
       // 未いいね: 白いハート
-      likeBtn.innerHTML = '🤍<span id="like-count">' + (currentLikes > 0 ? currentLikes : '') + '</span>';
+      likeBtn.innerHTML = `🤍${countBadge}`;
     }
   }
 
@@ -1124,7 +1129,7 @@
   function updateModalLikeButton(){
     const modalLikeBtn = document.getElementById('modal-like-btn');
     const currentFile = fileList[idx];
-    if (currentFile && likedImages.has(currentFile.id)) {
+    if (likedImages.has(idx)) {
       modalLikeBtn.textContent = '❤️';
       modalLikeBtn.classList.add('liked');
     } else {
