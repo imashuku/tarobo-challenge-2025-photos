@@ -37,8 +37,16 @@ export default async function handler(req, res) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
+  console.log('Environment check:', {
+    hasURL: !!SUPABASE_URL,
+    hasKey: !!SUPABASE_ANON_KEY,
+    urlLength: SUPABASE_URL?.length,
+    keyLength: SUPABASE_ANON_KEY?.length,
+    method: req.method
+  });
+
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error('Missing environment variables:', { SUPABASE_URL: !!SUPABASE_URL, SUPABASE_ANON_KEY: !!SUPABASE_ANON_KEY });
+    console.error('Missing environment variables');
     return res.status(500).json({
       success: false,
       error: 'Server configuration error: Missing Supabase credentials'
@@ -74,7 +82,8 @@ export default async function handler(req, res) {
       }
 
       // いいねを追加
-      const { error: insertError } = await supabase
+      console.log('Attempting insert:', { photoId, userFingerprint });
+      const { data: insertData, error: insertError } = await supabase
         .from('photo_likes')
         .insert({
           photo_id: photoId,
@@ -83,8 +92,10 @@ export default async function handler(req, res) {
 
       if (insertError) {
         console.error('Insert error:', insertError);
+        console.error('Full error object:', JSON.stringify(insertError));
         return res.status(500).json({ error: insertError.message });
       }
+      console.log('Insert successful:', insertData);
 
       // 最新のいいね数を取得
       const { count } = await supabase
