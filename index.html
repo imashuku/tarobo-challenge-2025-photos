@@ -364,6 +364,105 @@
     #filter-all.active, #filter-liked.active{
       background:#0066cc; border-color:#0066cc;
     }
+
+    /* スマホ対応 */
+    @media (max-width: 768px) {
+      /* HUD（ボタン群）を小さく */
+      #hud{
+        font-size:10px;
+        padding:6px 8px;
+        gap:4px;
+        max-width:calc(100vw - 24px);
+        left:6px;
+        bottom:6px;
+      }
+      #hud.raised{
+        bottom:126px; /* サムネイル高さを調整 */
+      }
+
+      /* ボタンを小さく */
+      button{
+        padding:4px 8px;
+        font-size:11px;
+        border-radius:6px;
+      }
+      #speed-controls button{
+        min-width:38px;
+      }
+
+      /* 画像情報を小さく */
+      #image-info{
+        top:6px;
+        right:6px;
+        padding:6px 10px;
+        font-size:12px;
+      }
+      #counter{
+        font-size:16px;
+      }
+      #filename{
+        font-size:10px;
+        max-width:150px;
+      }
+
+      /* ヘルプボタンを小さく */
+      #help-btn{
+        top:6px;
+        left:6px;
+        width:32px;
+        height:32px;
+        font-size:16px;
+      }
+
+      /* ヘルプパネル */
+      #help-panel{
+        top:44px;
+        left:6px;
+        font-size:11px;
+        padding:10px 12px;
+        max-width:280px;
+      }
+
+      /* サムネイル表示を小さく */
+      #thumbnail-container{
+        height:100px;
+      }
+      #thumbnail-list{
+        height:100px;
+      }
+      .thumbnail{
+        width:70px;
+        height:70px;
+      }
+
+      /* いいねボタン */
+      #like-btn{
+        width:50px;
+        height:50px;
+        font-size:24px;
+      }
+
+      /* フィルターボタン */
+      #filter-all, #filter-liked{
+        width:32px;
+        height:32px;
+        font-size:14px;
+      }
+
+      /* オープニング画面 */
+      #opening-logo{
+        max-width:200px;
+      }
+      #opening h1{
+        font-size:20px;
+      }
+      #opening .sub{
+        font-size:12px;
+      }
+      #opening .tagline{
+        font-size:11px;
+      }
+    }
   </style>
 </head>
 <body>
