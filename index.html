@@ -483,10 +483,8 @@
 
   <script>
   // ===== 設定 =====
-  // config.js から読み込まれます（GitHubにはコミットされません）
-  // セットアップ方法: config.example.js を config.js にコピーして編集してください
-  const FOLDER_ID = CONFIG.FOLDER_ID;
-  const API_KEY = CONFIG.API_KEY;
+  // Vercel Functions経由でGoogle Drive APIにアクセスします
+  // 環境変数はVercelの設定で管理されます
 
   const COUNT = 50;     // 表示枚数
   const FADE_MS = 1200;  // フェード時間
@@ -515,20 +513,60 @@
   let currentFilter = 'all'; // 現在のフィルター状態
   let thumbnailsVisible = false; // サムネイル表示状態
 
-  // Google DriveフォルダIDから画像リストを取得（ページネーション対応）
+  // Vercel Functions経由で画像リストを取得
+  // キャッシュにより、429エラーを防ぎます
   async function fetchList(){
-    if (API_KEY === 'YOUR_GOOGLE_API_KEY_HERE') {
-      throw new Error('APIキーを設定してください');
+    try {
+      // Vercel FunctionsのAPIエンドポイントを呼び出す
+      const apiUrl = '/api/photos';
+
+      console.log('Fetching photos from API...');
+
+      const res = await fetch(apiUrl);
+      if (!res.ok) {
+        throw new Error(`API Error: ${res.status} ${res.statusText}`);
+      }
+
+      const result = await res.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Unknown error');
+      }
+
+      const { data } = result;
+
+      console.log(`✅ Loaded ${data.count} photos from ${data.total} total images`);
+      if (result.cached) {
+        console.log(`📦 Cache age: ${result.cacheAge} seconds`);
+      }
+
+      return {
+        all: data.total,
+        pick: data.photos
+      };
+
+    } catch (error) {
+      console.error('Failed to fetch photos:', error);
+
+      // フォールバック: 直接Google Drive APIを呼び出す（後方互換性のため）
+      console.log('Falling back to direct Google Drive API...');
+      return fetchListDirect();
+    }
+  }
+
+  // フォールバック用: 直接Google Drive APIを呼び出す（config.jsが必要）
+  async function fetchListDirect(){
+    if (typeof CONFIG === 'undefined' || !CONFIG.API_KEY) {
+      throw new Error('APIキーが設定されていません。config.jsを確認してください。');
     }
 
     let allFiles = [];
     let pageToken = null;
 
-    // ページネーションで全ファイルを取得
     do {
       const params = {
-        q: `'${FOLDER_ID}' in parents and (mimeType contains 'image/')`,
-        key: API_KEY,
+        q: `'${CONFIG.FOLDER_ID}' in parents and (mimeType contains 'image/')`,
+        key: CONFIG.API_KEY,
         fields: 'files(id,name,mimeType,webContentLink),nextPageToken',
         pageSize: '1000',
         orderBy: 'name'
@@ -540,31 +578,19 @@
 
       const url = `https://www.googleapis.com/drive/v3/files?` + new URLSearchParams(params);
 
-      console.log(`Fetching page... (current total: ${allFiles.length})`);
-
       const res = await fetch(url);
       if (!res.ok) {
         const error = await res.json();
-        console.error('Google Drive API Error:', error);
         throw new Error(`API Error: ${error.error?.message || 'Unknown error'}`);
       }
 
       const data = await res.json();
-      const files = data.files || [];
-
-      allFiles = allFiles.concat(files);
+      allFiles = allFiles.concat(data.files || []);
       pageToken = data.nextPageToken;
 
-      console.log(`Fetched ${files.length} files. Total: ${allFiles.length}`);
+    } while (pageToken);
 
-    } while (pageToken); // nextPageTokenがある限り続ける
-
-    console.log(`✅ All files fetched: ${allFiles.length} images`);
-
-    // ランダムにシャッフル
     const shuffled = allFiles.sort(() => Math.random() - 0.5);
-
-    // 画像URLを生成（公開フォルダの場合）
     const pick = shuffled.slice(0, COUNT).map(f => ({
       url: `https://drive.google.com/thumbnail?id=${f.id}&sz=w1200`,
       name: f.name,

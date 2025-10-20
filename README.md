@@ -25,9 +25,11 @@
 ## 技術スタック
 
 - **Pure HTML/CSS/JavaScript** - フレームワーク不使用
+- **Vercel Serverless Functions** - バックエンドAPI（Node.js）
 - **Google Drive API v3** - 画像の動的取得
 - **LocalStorage** - いいね情報の永続化
 - **CSS Transitions** - フェードエフェクト
+- **Edge Caching** - 1時間キャッシュで429エラーを防止
 
 ## セットアップ
 
@@ -72,6 +74,29 @@ python3 -m http.server 8000
 # http://localhost:8000 にアクセス
 ```
 
+## Vercelへのデプロイ（推奨）
+
+大規模なアクセスに対応するため、Vercelへのデプロイを推奨します。
+
+### 1. Vercelアカウントを作成
+https://vercel.com にアクセスしてサインアップ
+
+### 2. GitHubリポジトリをインポート
+1. Vercelダッシュボードで「New Project」をクリック
+2. GitHubリポジトリ `tarobo-challenge-2025-photos` を選択
+3. 「Import」をクリック
+
+### 3. 環境変数を設定
+「Environment Variables」セクションで以下を追加：
+- `FOLDER_ID`: `1SjdlmWER2n6kRT0CB0zuO4OmIrnc9aR1`
+- `API_KEY`: Google Drive APIキー
+
+### 4. デプロイ
+「Deploy」をクリックすると、自動的にデプロイされます。
+
+### 5. カスタムドメイン（オプション）
+Vercelの設定で独自ドメインを設定できます。
+
 ## キーボード操作
 
 | キー | 動作 |
@@ -108,9 +133,18 @@ python3 -m http.server 8000
 - **重要**: これらのドメイン以外からはAPIキーを使用できないため、第三者による不正利用のリスクは最小限です
 - **Google Driveフォルダ**: 公開設定の場合、誰でもアクセス可能です（必要に応じて制限してください）
 
-### 429エラーについて
+### 429エラーの防止（改善済み）
 
-短時間に大量の画像を読み込むと、Google Driveの一時的なレート制限により429エラーが発生することがあります。その場合は30分〜1時間待ってから再度アクセスしてください。
+**Vercel Serverless Functionsとキャッシュ機能により、429エラーを防止しています。**
+
+**改善内容：**
+- サーバーサイドで画像リストを1時間キャッシュ
+- 複数のユーザーがアクセスしても、1時間に1回だけGoogle Drive APIを呼び出す
+- 大規模なアクセスにも対応可能
+
+**旧バージョンとの互換性：**
+- API経由での取得に失敗した場合、自動的に直接Google Drive APIにフォールバック
+- `config.js`がある場合は、ローカル開発でも動作します
 
 ## クレジット
 
