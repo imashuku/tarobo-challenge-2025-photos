@@ -80,12 +80,18 @@
     /* キーボードヘルプ */
     #help-btn{
       position:fixed; top:12px; left:12px; z-index:10;
-      width:40px; height:40px; border-radius:50%;
+      width:60px; height:60px; border-radius:10px;
       background:rgba(0,0,0,0.35); border:1px solid #666;
-      color:#fff; font-size:20px; cursor:pointer;
+      color:#fff; font-size:24px; cursor:pointer;
       backdrop-filter: blur(6px);
-      transition: all 0.3s ease;
+      transition: all 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
       display:flex; align-items:center; justify-content:center;
+      opacity: 1;
+    }
+    #help-btn.hidden{
+      opacity: 0;
+      transform: translateY(-20px);
+      pointer-events: none;
     }
     #help-btn:hover{
       transform:scale(1.05);
@@ -377,14 +383,21 @@
     #filter-controls{
       position:fixed; top:50%; right:12px; transform:translateY(-50%); z-index:15;
       display:flex; flex-direction:column; gap:6px;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      opacity: 1;
+    }
+    #filter-controls.hidden{
+      opacity: 0;
+      transform: translateY(-50%) translateX(20px);
+      pointer-events: none;
     }
     #filter-all, #filter-liked{
-      width:50px; height:50px; border-radius:10px;
+      width:60px; height:60px; border-radius:10px;
       border:1px solid #666; cursor:pointer;
       background:rgba(0,0,0,0.35); color:#fff;
       backdrop-filter:blur(6px); transition:all 0.3s ease;
       display:flex; align-items:center; justify-content:center;
-      font-size:20px;
+      font-size:24px;
     }
     #filter-all:hover, #filter-liked:hover{
       transform:scale(1.05); background:rgba(0,0,0,0.5); border-color:#888;
@@ -433,13 +446,13 @@
         max-width:150px;
       }
 
-      /* ヘルプボタンを小さく */
+      /* ヘルプボタン */
       #help-btn{
         top:6px;
         left:6px;
-        width:32px;
-        height:32px;
-        font-size:16px;
+        width:50px;
+        height:50px;
+        font-size:20px;
       }
 
       /* ヘルプパネル */
@@ -483,9 +496,9 @@
 
       /* フィルターボタン */
       #filter-all, #filter-liked{
-        width:32px;
-        height:32px;
-        font-size:14px;
+        width:50px;
+        height:50px;
+        font-size:20px;
       }
 
       /* オープニング画面 */
@@ -1351,6 +1364,8 @@
     document.getElementById('image-info').classList.add('hidden');
     document.getElementById('like-btn').classList.add('hidden');
     document.getElementById('share-btns').classList.add('hidden');
+    document.getElementById('help-btn').classList.add('hidden');
+    document.getElementById('filter-controls').classList.add('hidden');
   }
 
   function showUI() {
@@ -1358,6 +1373,8 @@
     document.getElementById('image-info').classList.remove('hidden');
     document.getElementById('like-btn').classList.remove('hidden');
     document.getElementById('share-btns').classList.remove('hidden');
+    document.getElementById('help-btn').classList.remove('hidden');
+    document.getElementById('filter-controls').classList.remove('hidden');
 
     // タイマーをリセット
     clearTimeout(uiHideTimer);
