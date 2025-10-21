@@ -424,6 +424,122 @@
       background:#0066cc; border-color:#0066cc;
     }
 
+    /* 統計情報パネル */
+    #stats-btn{
+      position:fixed; top:12px; left:148px; z-index:10;
+      width:60px; height:60px; border-radius:10px;
+      background:rgba(0,0,0,0.35); border:1px solid #666;
+      color:#fff; font-size:24px; cursor:pointer;
+      backdrop-filter: blur(6px);
+      transition: all 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+      display:flex; align-items:center; justify-content:center;
+      opacity: 1;
+    }
+    #stats-btn.hidden{
+      opacity: 0;
+      transform: translateY(-20px);
+      pointer-events: none;
+    }
+    #stats-btn:hover{
+      transform:scale(1.05);
+      background:rgba(0,0,0,0.5);
+      border-color:#888;
+    }
+    #stats-panel{
+      position:fixed; top:60px; left:128px; z-index:10;
+      color:#fff; font:12px/1.6 system-ui,-apple-system,Segoe UI,Roboto;
+      background:rgba(0,0,0,0.85); padding:12px 16px; border-radius:10px;
+      backdrop-filter: blur(10px);
+      border:1px solid #666;
+      max-width:320px;
+      display:none;
+      min-width:280px;
+    }
+    #stats-panel.show{ display:block; }
+    #stats-panel h3{
+      margin:0 0 12px 0; font-size:14px; font-weight:bold;
+    }
+    #stats-panel .stat-item{
+      display:flex; justify-content:space-between; align-items:center;
+      margin:8px 0; padding:6px 0; border-bottom:1px solid #333;
+    }
+    #stats-panel .stat-label{
+      color:#999; font-size:11px;
+    }
+    #stats-panel .stat-value{
+      color:#8bdcff; font-size:18px; font-weight:bold;
+    }
+    #stats-panel .ranking-list{
+      margin:12px 0 0 0; padding:0; list-style:none;
+      max-height:300px; overflow-y:auto;
+    }
+    #stats-panel .ranking-item{
+      display:flex; align-items:center; gap:8px;
+      margin:6px 0; padding:6px; background:rgba(255,255,255,0.05);
+      border-radius:6px; cursor:pointer;
+      transition:all 0.2s;
+    }
+    #stats-panel .ranking-item:hover{
+      background:rgba(255,255,255,0.1); transform:translateX(4px);
+    }
+    #stats-panel .ranking-rank{
+      font-size:16px; font-weight:bold; color:#0066cc; min-width:24px;
+    }
+    #stats-panel .ranking-count{
+      margin-left:auto; color:#ff6b6b; font-weight:bold;
+    }
+    #stats-panel .loading{
+      text-align:center; padding:20px; color:#666;
+    }
+
+    /* いいねエフェクト強化 */
+    @keyframes heartPop {
+      0% { transform: scale(1); }
+      20% { transform: scale(1.4) rotate(-5deg); }
+      40% { transform: scale(1.2) rotate(5deg); }
+      60% { transform: scale(1.3) rotate(-3deg); }
+      80% { transform: scale(1.15) rotate(2deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    @keyframes heartFloat {
+      0% { opacity: 1; transform: translateY(0) scale(0.5); }
+      50% { opacity: 0.8; transform: translateY(-30px) scale(1); }
+      100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+    }
+    @keyframes ripple {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+    .heart-effect{
+      position:fixed; font-size:40px; pointer-events:none;
+      animation: heartFloat 1s ease-out forwards;
+      z-index:1000;
+    }
+    .ripple-effect{
+      position:absolute; inset:0; border-radius:10px;
+      border:3px solid rgba(255,50,50,0.6);
+      animation: ripple 0.6s ease-out;
+      pointer-events:none;
+    }
+
+    /* リアルタイム通知 */
+    #realtime-notify{
+      position:fixed; top:80px; right:12px; z-index:100;
+      background:rgba(255,50,50,0.95); color:#fff;
+      padding:12px 16px; border-radius:8px;
+      font:12px/1.4 system-ui,-apple-system,Segoe UI,Roboto;
+      box-shadow:0 4px 12px rgba(0,0,0,0.3);
+      transform:translateX(400px);
+      transition:transform 0.3s ease;
+      max-width:280px;
+    }
+    #realtime-notify.show{
+      transform:translateX(0);
+    }
+    #realtime-notify .notify-icon{
+      display:inline-block; margin-right:8px; font-size:16px;
+    }
+
     /* スマホ対応 */
     @media (max-width: 768px) {
       /* HUD（ボタン群）を小さく */
@@ -597,6 +713,40 @@
     <p>撮影は一人のカメラマンが、マニュアルフォーカスで一日中追い続けました。すべてのチャレンジャーを撮り切れたわけではありませんが、写らなかった人の挑戦も、私たちの記憶の中に確かに刻まれています。</p>
     <p>このスライドショーは、膨大なアーカイブからランダムに選ばれた50枚を表示します。ページをリロード、または🔄ボタンを押すたび、新たな50の表情と出会えます。</p>
     <p class="tagline">これは、未来を掴もうとした全ての人の記録です。</p>
+  </div>
+
+  <!-- 統計情報ボタン -->
+  <button id="stats-btn" title="いいね統計情報を表示">📊</button>
+  <div id="stats-panel">
+    <h3>📊 いいね統計</h3>
+    <div id="stats-summary">
+      <div class="stat-item">
+        <span class="stat-label">総いいね数</span>
+        <span class="stat-value" id="stat-total">-</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">人気写真数</span>
+        <span class="stat-value" id="stat-photos">-</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">ユーザー数</span>
+        <span class="stat-value" id="stat-users">-</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">平均いいね数</span>
+        <span class="stat-value" id="stat-avg">-</span>
+      </div>
+    </div>
+    <h3 style="margin-top:16px;">🏆 人気ランキング TOP10</h3>
+    <ul class="ranking-list" id="ranking-list">
+      <li class="loading">読み込み中...</li>
+    </ul>
+  </div>
+
+  <!-- リアルタイム通知 -->
+  <div id="realtime-notify">
+    <span class="notify-icon">❤️</span>
+    <span id="realtime-message">誰かがいいねしました！</span>
   </div>
 
   <div id="image-info">
@@ -1581,10 +1731,216 @@
   // 初期表示
   resetUITimer();
 
+  // ===== 新機能: 統計情報・ランキング・リアルタイム更新 =====
+
+  // 統計情報パネル
+  let statsVisible = false;
+  let statsData = null;
+
+  document.getElementById('stats-btn').onclick = async () => {
+    statsVisible = !statsVisible;
+    const panel = document.getElementById('stats-panel');
+    panel.classList.toggle('show', statsVisible);
+
+    if (statsVisible && !statsData) {
+      await loadStats();
+    }
+  };
+
+  // 統計情報を読み込み
+  async function loadStats() {
+    try {
+      // サマリー取得
+      const summaryRes = await fetch('/api/analytics?type=summary');
+      const summaryData = await summaryRes.json();
+
+      if (summaryData.success) {
+        document.getElementById('stat-total').textContent = summaryData.data.totalLikes;
+        document.getElementById('stat-photos').textContent = summaryData.data.uniquePhotos;
+        document.getElementById('stat-users').textContent = summaryData.data.uniqueUsers;
+        document.getElementById('stat-avg').textContent = summaryData.data.avgLikesPerPhoto.toFixed(1);
+      }
+
+      // ランキング取得
+      const rankingRes = await fetch('/api/analytics?type=ranking&limit=10');
+      const rankingData = await rankingRes.json();
+
+      if (rankingData.success) {
+        const rankingList = document.getElementById('ranking-list');
+        rankingList.innerHTML = '';
+
+        rankingData.data.ranking.forEach((item, index) => {
+          const li = document.createElement('li');
+          li.className = 'ranking-item';
+          li.innerHTML = `
+            <span class="ranking-rank">#${index + 1}</span>
+            <span class="ranking-photo-id" style="flex:1; font-size:10px; opacity:0.7;">${item.photoId.substring(0, 12)}...</span>
+            <span class="ranking-count">❤️ ${item.count}</span>
+          `;
+
+          // クリックでその写真にジャンプ（もし表示中なら）
+          li.onclick = () => {
+            const foundIdx = fileList.findIndex(f => f.id === item.photoId);
+            if (foundIdx !== -1) {
+              jumpToSlide(foundIdx);
+              statsVisible = false;
+              document.getElementById('stats-panel').classList.remove('show');
+            }
+          };
+
+          rankingList.appendChild(li);
+        });
+
+        statsData = { summary: summaryData.data, ranking: rankingData.data.ranking };
+      }
+
+    } catch (error) {
+      console.error('Failed to load stats:', error);
+      document.getElementById('ranking-list').innerHTML = '<li class="loading">読み込みに失敗しました</li>';
+    }
+  }
+
+  // 統計パネル外クリックで閉じる
+  document.addEventListener('click', (e) => {
+    const statsBtn = document.getElementById('stats-btn');
+    const statsPanel = document.getElementById('stats-panel');
+
+    if (statsVisible && !statsBtn.contains(e.target) && !statsPanel.contains(e.target)) {
+      statsVisible = false;
+      statsPanel.classList.remove('show');
+    }
+  });
+
+  // いいねエフェクト強化
+  function createEnhancedLikeEffect(element) {
+    // ハートポップアニメーション
+    element.style.animation = 'heartPop 0.6s ease-out';
+    setTimeout(() => {
+      element.style.animation = '';
+    }, 600);
+
+    // リップルエフェクト
+    const ripple = document.createElement('div');
+    ripple.className = 'ripple-effect';
+    element.style.position = 'relative';
+    element.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+
+    // フローティングハート（ランダム位置）
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => {
+        const heart = document.createElement('div');
+        heart.className = 'heart-effect';
+        heart.textContent = ['❤️', '💖', '💕'][i];
+
+        const rect = element.getBoundingClientRect();
+        heart.style.left = rect.left + (Math.random() * rect.width) + 'px';
+        heart.style.top = rect.top + (Math.random() * rect.height) + 'px';
+
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 1000);
+      }, i * 100);
+    }
+  }
+
+  // toggleLike関数を拡張（エフェクト追加）
+  const originalToggleLike = toggleLike;
+  toggleLike = async function() {
+    const wasLiked = likedImages.has(idx);
+    await originalToggleLike();
+
+    if (!wasLiked && likedImages.has(idx)) {
+      // いいね追加時のみエフェクト
+      const likeBtn = document.getElementById('like-btn');
+      createEnhancedLikeEffect(likeBtn);
+    }
+  };
+
+  // Supabase Realtimeでリアルタイム更新
+  let supabaseClient = null;
+  let realtimeChannel = null;
+
+  async function initRealtimeUpdates() {
+    try {
+      // Supabaseクライアントを初期化（環境変数は使えないので、公開データのみ）
+      // 注: フロントエンドでは環境変数にアクセスできないため、
+      // リアルタイム更新は5秒ごとのポーリングで代替
+
+      startPollingForUpdates();
+    } catch (error) {
+      console.log('Realtime updates not available, using polling instead');
+      startPollingForUpdates();
+    }
+  }
+
+  // ポーリングでいいね数の変更を検出
+  let lastKnownCounts = {};
+  let pollingInterval = null;
+
+  function startPollingForUpdates() {
+    // 5秒ごとに現在の写真のいいね数をチェック
+    pollingInterval = setInterval(async () => {
+      if (slides.length === 0 || !fileList[idx]) return;
+
+      const currentFile = fileList[idx];
+      if (!currentFile || !currentFile.id) return;
+
+      try {
+        const response = await fetch(`/api/like?photoId=${currentFile.id}`);
+        const result = await response.json();
+
+        if (result.success) {
+          const newCount = result.count || 0;
+          const oldCount = lastKnownCounts[currentFile.id] || 0;
+
+          // いいね数が増えた場合に通知
+          if (oldCount > 0 && newCount > oldCount) {
+            showRealtimeNotification(`誰かがこの写真にいいねしました！ (+${newCount - oldCount})`);
+
+            // いいね数を更新
+            imageLikeCounts[idx] = newCount;
+            updateLikeButton();
+          }
+
+          lastKnownCounts[currentFile.id] = newCount;
+        }
+      } catch (error) {
+        // エラーは無視（ネットワーク切断時など）
+      }
+    }, 5000); // 5秒ごと
+  }
+
+  // リアルタイム通知を表示
+  function showRealtimeNotification(message) {
+    const notify = document.getElementById('realtime-notify');
+    const messageEl = document.getElementById('realtime-message');
+
+    messageEl.textContent = message;
+    notify.classList.add('show');
+
+    setTimeout(() => {
+      notify.classList.remove('show');
+    }, 3000);
+  }
+
+  // UI非表示時も統計ボタンは非表示にする
+  const originalHideUI = hideUI;
+  hideUI = function() {
+    originalHideUI();
+    document.getElementById('stats-btn').classList.add('hidden');
+  };
+
+  const originalShowUI = showUI;
+  showUI = function() {
+    originalShowUI();
+    document.getElementById('stats-btn').classList.remove('hidden');
+  };
+
   // 初期化
   initOpening();
   initBGM();
   init();
+  initRealtimeUpdates();
   </script>
 </body>
 </html>
