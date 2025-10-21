@@ -66,12 +66,18 @@ export default async function handler(req, res) {
       }
 
       // 既にいいねしているかチェック
-      const { data: existing } = await supabase
+      const { data: existing, error: checkError } = await supabase
         .from('photo_likes')
         .select('id')
         .eq('photo_id', photoId)
         .eq('user_fingerprint', userFingerprint)
-        .single();
+        .maybeSingle();
+
+      // .single()ではなく.maybeSingle()を使用（レコードがない場合もエラーにならない）
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Check error:', checkError);
+        return res.status(500).json({ error: checkError.message });
+      }
 
       if (existing) {
         return res.status(200).json({
@@ -155,12 +161,17 @@ export default async function handler(req, res) {
         .eq('photo_id', photoId);
 
       // 自分がいいねしているかチェック
-      const { data: userLike } = await supabase
+      const { data: userLike, error: userLikeError } = await supabase
         .from('photo_likes')
         .select('id')
         .eq('photo_id', photoId)
         .eq('user_fingerprint', userFingerprint)
-        .single();
+        .maybeSingle();
+
+      // エラーハンドリング（PGRST116は「レコードなし」エラーなので無視）
+      if (userLikeError && userLikeError.code !== 'PGRST116') {
+        console.error('User like check error:', userLikeError);
+      }
 
       return res.status(200).json({
         success: true,
