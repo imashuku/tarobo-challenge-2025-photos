@@ -13,23 +13,59 @@
 
 ## 特徴
 
+### 基本機能
 - **ランダム表示**: 毎回異なる50枚の写真をランダムに選択
 - **スムーズなフェード**: 1.2秒のクロスフェードで滑らかな切り替え
 - **スピード調整**: スロー（6秒）、ノーマル（3.5秒）、ファスト（1.5秒）
-- **キーボード操作**: Space（再生/停止）、矢印キー（画像送り/速度変更）、L（いいね）など
-- **いいね機能**: お気に入りの写真を保存し、フィルター表示可能
+- **キーボード操作**: Space（再生/停止）、矢印キー（画像送り）、L（いいね）など
 - **サムネイル表示**: 全50枚を一覧表示し、クリックでジャンプ
 - **SNSシェア**: Twitter、Facebook、LINEで共有可能
 - **BGM再生**: バックグラウンドミュージック対応
 
+### 🆕 いいね機能（Supabase連携）
+- **永続化**: Supabase PostgreSQLにいいね情報を保存
+- **リアルタイム更新**: 5秒ごとのポーリングで他ユーザーのいいねを即座に反映
+- **通知機能**: 誰かがいいねした時にリアルタイム通知を表示
+- **フィルター**: いいねした写真だけを表示可能
+- **ユーザー識別**: IPアドレス + User-Agentでフィンガープリント生成
+
+### 🆕 Analytics機能
+- **統計情報**: 総いいね数、ユニーク写真数、ユーザー数、平均いいね数
+- **人気ランキング**: いいね数の多い順にTOP10を表示
+- **ランキングジャンプ**: クリックで該当写真に直接移動
+- **キャッシング**: 1分間キャッシュで高速表示
+
+### 🆕 ビジュアルエフェクト強化
+- **ハートポップアニメーション**: 回転＋拡大の豪華なアニメーション
+- **リップルエフェクト**: いいねボタンから波紋が広がる
+- **フローティングハート**: 3つのハートが浮き上がるエフェクト
+- **スムーズトランジション**: すべてのUI要素にアニメーション適用
+
 ## 技術スタック
 
-- **Pure HTML/CSS/JavaScript** - フレームワーク不使用
-- **Vercel Serverless Functions** - バックエンドAPI（Node.js）
+### フロントエンド
+- **Pure HTML/CSS/JavaScript** - フレームワーク不使用（1900行以上の統合ファイル）
+- **CSS3 Animations** - ハートポップ、リップル、フローティングハート
+- **LocalStorage** - いいね情報のローカルバックアップ
+
+### バックエンド
+- **Vercel Serverless Functions** - 3つのAPIエンドポイント
+  - `/api/photos.js` - 画像リスト取得（1時間キャッシュ）
+  - `/api/like.js` - いいね機能（GET/POST/DELETE）
+  - `/api/analytics.js` - 統計情報（1分キャッシュ）🆕
 - **Google Drive API v3** - 画像の動的取得
-- **LocalStorage** - いいね情報の永続化
-- **CSS Transitions** - フェードエフェクト
-- **Edge Caching** - 1時間キャッシュで429エラーを防止
+- **Edge Caching** - Vercel Edgeで高速配信
+
+### データベース
+- **Supabase (PostgreSQL)** - いいね情報の永続化 🆕
+  - テーブル: `photo_likes`
+  - Row Level Security (RLS) 有効化
+  - インデックス最適化済み
+
+### セキュリティ
+- **ユーザー識別**: IPアドレス + User-Agentハッシュ
+- **重複防止**: ユニーク制約でデータ整合性を保証
+- **RLSポリシー**: 読み取り・書き込み・削除の権限管理
 
 ## セットアップ
 
@@ -88,8 +124,14 @@ https://vercel.com にアクセスしてサインアップ
 
 ### 3. 環境変数を設定
 「Environment Variables」セクションで以下を追加：
+
+**Google Drive API**:
 - `FOLDER_ID`: `1SjdlmWER2n6kRT0CB0zuO4OmIrnc9aR1`
 - `API_KEY`: Google Drive APIキー
+
+**Supabase** 🆕:
+- `SUPABASE_URL`: `https://your-project.supabase.co`
+- `SUPABASE_ANON_KEY`: Supabaseの匿名キー（anon public key）
 
 ### 4. デプロイ
 「Deploy」をクリックすると、自動的にデプロイされます。
@@ -114,12 +156,17 @@ Vercelの設定で独自ドメインを設定できます。
 
 ```
 .
-├── index.html                   # メインファイル（HTML/CSS/JS統合）
+├── index.html                   # メインファイル（HTML/CSS/JS統合、1900行以上）
+├── api/
+│   ├── photos.js                # 画像リスト取得API
+│   ├── like.js                  # いいね機能API（GET/POST/DELETE）
+│   └── analytics.js             # 統計情報API 🆕
+├── supabase_photo_likes.sql     # Supabaseテーブル定義 🆕
 ├── config.example.js            # 設定ファイルのテンプレート
-├── config.js                    # 実際の設定（.gitignoreに含まれる）
 ├── tarobo-logo-white.png        # ロゴ（透過PNG、白文字）
-├── TAROBO CHALLENGE モバイル用.jpg  # 元画像（青文字）
 ├── message.md                   # プロジェクトの理念
+├── vercel.json                  # Vercel設定
+├── package.json                 # Node.js依存関係
 ├── .gitignore                   # Git除外設定
 └── README.md                    # このファイル
 ```
@@ -145,6 +192,116 @@ Vercelの設定で独自ドメインを設定できます。
 **旧バージョンとの互換性：**
 - API経由での取得に失敗した場合、自動的に直接Google Drive APIにフォールバック
 - `config.js`がある場合は、ローカル開発でも動作します
+
+## API エンドポイント
+
+### 1. 画像リスト取得
+```
+GET /api/photos
+```
+Google Driveからランダムに50枚の写真を取得。1時間キャッシュ。
+
+**レスポンス例**:
+```json
+{
+  "success": true,
+  "cached": false,
+  "data": {
+    "total": 1146,
+    "count": 50,
+    "photos": [
+      { "url": "...", "name": "...", "id": "..." }
+    ]
+  }
+}
+```
+
+### 2. いいね機能 🆕
+```
+GET /api/like?photoId={id}      # いいね数取得
+POST /api/like                  # いいね追加
+DELETE /api/like?photoId={id}   # いいね削除
+```
+
+**POSTリクエスト例**:
+```json
+{
+  "photoId": "1abc123xyz"
+}
+```
+
+**レスポンス例**:
+```json
+{
+  "success": true,
+  "liked": true,
+  "count": 5
+}
+```
+
+### 3. 統計情報 🆕
+```
+GET /api/analytics?type=summary     # サマリー統計
+GET /api/analytics?type=ranking&limit=10  # 人気ランキング
+GET /api/analytics?type=recent&limit=10   # 最近のいいね
+```
+
+**サマリーレスポンス例**:
+```json
+{
+  "success": true,
+  "data": {
+    "totalLikes": 123,
+    "uniquePhotos": 45,
+    "uniqueUsers": 67,
+    "avgLikesPerPhoto": 2.7
+  }
+}
+```
+
+**ランキングレスポンス例**:
+```json
+{
+  "success": true,
+  "data": {
+    "ranking": [
+      { "photoId": "abc123", "count": 15 },
+      { "photoId": "def456", "count": 12 }
+    ],
+    "total": 10
+  }
+}
+```
+
+## 更新履歴
+
+### v2.0.0 (2025-10-22) 🆕
+**重要な機能追加**
+- ✅ Analytics API実装（統計情報・ランキング）
+- ✅ いいね機能のSupabase永続化
+- ✅ リアルタイム更新（5秒ポーリング）
+- ✅ ビジュアルエフェクト強化（3重アニメーション）
+- ✅ 統計情報パネル追加（📊ボタン）
+- ✅ 人気ランキングTOP10表示
+- ✅ リアルタイム通知機能
+
+**バグフィックス**
+- 🐛 `.single()`を`.maybeSingle()`に修正してSupabase接続エラーを解消
+- 🐛 Invalid API keyエラーの修正
+
+**技術的改善**
+- 📦 Supabase統合（PostgreSQL）
+- 📦 APIエンドポイント追加（analytics.js）
+- 📦 キャッシュ戦略の最適化
+
+### v1.0.0 (2025-10-20)
+**初回リリース**
+- ✅ ランダムスライドショー機能
+- ✅ いいね機能（LocalStorage）
+- ✅ SNSシェア機能
+- ✅ BGM再生機能
+- ✅ サムネイル表示
+- ✅ フィルター機能
 
 ## クレジット
 
