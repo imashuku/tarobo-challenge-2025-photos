@@ -2031,7 +2031,8 @@
     const panel = document.getElementById('stats-panel');
     panel.classList.toggle('show', statsVisible);
 
-    if (statsVisible && !statsData) {
+    // パネルを開くたびに最新の統計情報を取得
+    if (statsVisible) {
       await loadStats();
     }
   };
