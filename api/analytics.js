@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   // CORS設定
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate'); // 1分キャッシュ
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate'); // キャッシュ無効化
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
