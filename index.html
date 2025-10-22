@@ -71,54 +71,9 @@
 
     /* スピードコントロールは削除済み */
 
-    /* キーボードヘルプ */
-    #help-btn{
-      position:fixed; top:12px; left:12px; z-index:10;
-      width:60px; height:60px; border-radius:10px;
-      background:rgba(0,0,0,0.35); border:1px solid #666;
-      color:#fff; font-size:24px; cursor:pointer;
-      backdrop-filter: blur(6px);
-      transition: all 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
-      display:flex; align-items:center; justify-content:center;
-      opacity: 1;
-    }
-    #help-btn.hidden{
-      opacity: 0;
-      transform: translateY(-20px);
-      pointer-events: none;
-    }
-    #help-btn:hover{
-      transform:scale(1.05);
-      background:rgba(0,0,0,0.5);
-      border-color:#888;
-    }
-    #help-panel{
-      position:fixed; top:60px; left:12px; z-index:10;
-      color:#fff; font:12px/1.6 system-ui,-apple-system,Segoe UI,Roboto;
-      background:rgba(0,0,0,0.85); padding:12px 16px; border-radius:10px;
-      backdrop-filter: blur(10px);
-      border:1px solid #666;
-      max-width:320px;
-      display:none;
-    }
-    #help-panel.show{ display:block; }
-    #help-panel h3{
-      margin:0 0 8px 0; font-size:14px; font-weight:bold;
-    }
-    #help-panel ul{
-      margin:0; padding:0; list-style:none;
-    }
-    #help-panel li{
-      margin:4px 0; padding:4px 0;
-    }
-    #help-panel strong{
-      color:#8bdcff; font-weight:normal;
-      display:inline-block; min-width:80px;
-    }
-
     /* Aboutボタン */
     #about-btn{
-      position:fixed; top:12px; left:80px; z-index:10;
+      position:fixed; top:12px; left:12px; z-index:10;
       width:60px; height:60px; border-radius:10px;
       background:rgba(0,0,0,0.35); border:1px solid #666;
       color:#fff; font-size:24px; cursor:pointer;
@@ -432,7 +387,7 @@
 
     /* 統計情報パネル */
     #stats-btn{
-      position:fixed; top:12px; left:148px; z-index:10;
+      position:fixed; top:12px; left:80px; z-index:10;
       width:60px; height:60px; border-radius:10px;
       background:rgba(0,0,0,0.35); border:1px solid #666;
       color:#fff; font-size:24px; cursor:pointer;
@@ -592,19 +547,10 @@
         max-width:150px;
       }
 
-      /* ヘルプボタン */
-      #help-btn{
-        top:6px;
-        left:6px;
-        width:50px;
-        height:50px;
-        font-size:20px;
-      }
-
       /* Aboutボタン */
       #about-btn{
         top:6px;
-        left:62px;
+        left:6px;
         width:50px;
         height:50px;
         font-size:20px;
@@ -613,7 +559,7 @@
       /* 統計ボタン */
       #stats-btn{
         top:6px;
-        left:118px;
+        left:62px;
         width:50px;
         height:50px;
         font-size:20px;
@@ -631,15 +577,6 @@
         overflow-y:auto;
         font-size:11px;
         padding:10px 12px;
-      }
-
-      /* ヘルプパネル */
-      #help-panel{
-        top:44px;
-        left:6px;
-        font-size:11px;
-        padding:10px 12px;
-        max-width:280px;
       }
 
       /* サムネイル表示を小さく */
@@ -729,21 +666,6 @@
       <br>
       <button id="opening-skip" title="オープニングをスキップしてすぐに開始します">Skip</button>
     </div>
-  </div>
-
-  <!-- ヘルプボタン -->
-  <button id="help-btn" title="キーボード操作を表示">?</button>
-  <div id="help-panel">
-    <h3>⌨️ キーボード操作</h3>
-    <ul>
-      <li><strong>Space</strong> 一時停止 / 再生</li>
-      <li><strong>← →</strong> 前後の画像に移動</li>
-      <li><strong>L</strong> いいね</li>
-      <li><strong>Enter</strong> 画像を拡大表示</li>
-      <li><strong>Esc</strong> 閉じる</li>
-      <li><strong>T</strong> 写真一覧の表示切替</li>
-      <li><strong>F</strong> フィルター切替</li>
-    </ul>
   </div>
 
   <!-- Aboutボタン -->
@@ -1619,39 +1541,6 @@
     };
   }
 
-  // ヘルプボタン
-  let helpVisible = false;
-
-  document.getElementById('help-btn').onclick = () => {
-    helpVisible = !helpVisible;
-    const panel = document.getElementById('help-panel');
-    panel.classList.toggle('show', helpVisible);
-
-    // Aboutパネルが開いていたら閉じる
-    if (helpVisible && aboutVisible) {
-      aboutVisible = false;
-      document.getElementById('about-panel').classList.remove('show');
-    }
-  };
-
-  // ヘルプパネル外をクリックしたら閉じる
-  document.addEventListener('click', (e) => {
-    const helpBtn = document.getElementById('help-btn');
-    const helpPanel = document.getElementById('help-panel');
-    const aboutBtn = document.getElementById('about-btn');
-    const aboutPanel = document.getElementById('about-panel');
-
-    if (helpVisible && !helpBtn.contains(e.target) && !helpPanel.contains(e.target)) {
-      helpVisible = false;
-      helpPanel.classList.remove('show');
-    }
-
-    if (aboutVisible && !aboutBtn.contains(e.target) && !aboutPanel.contains(e.target)) {
-      aboutVisible = false;
-      aboutPanel.classList.remove('show');
-    }
-  });
-
   // Aboutボタン
   let aboutVisible = false;
 
@@ -1659,13 +1548,18 @@
     aboutVisible = !aboutVisible;
     const panel = document.getElementById('about-panel');
     panel.classList.toggle('show', aboutVisible);
-
-    // ヘルプパネルが開いていたら閉じる
-    if (aboutVisible && helpVisible) {
-      helpVisible = false;
-      document.getElementById('help-panel').classList.remove('show');
-    }
   };
+
+  // Aboutパネル外をクリックしたら閉じる
+  document.addEventListener('click', (e) => {
+    const aboutBtn = document.getElementById('about-btn');
+    const aboutPanel = document.getElementById('about-panel');
+
+    if (aboutVisible && !aboutBtn.contains(e.target) && !aboutPanel.contains(e.target)) {
+      aboutVisible = false;
+      aboutPanel.classList.remove('show');
+    }
+  });
 
   // キーボード操作
   document.addEventListener('keydown', (e) => {
@@ -1741,8 +1635,8 @@
     document.getElementById('image-info').classList.add('hidden');
     document.getElementById('like-btn').classList.add('hidden');
     document.getElementById('share-btns').classList.add('hidden');
-    document.getElementById('help-btn').classList.add('hidden');
     document.getElementById('about-btn').classList.add('hidden');
+    document.getElementById('stats-btn').classList.add('hidden');
     document.getElementById('filter-controls').classList.add('hidden');
   }
 
@@ -1751,8 +1645,8 @@
     document.getElementById('image-info').classList.remove('hidden');
     document.getElementById('like-btn').classList.remove('hidden');
     document.getElementById('share-btns').classList.remove('hidden');
-    document.getElementById('help-btn').classList.remove('hidden');
     document.getElementById('about-btn').classList.remove('hidden');
+    document.getElementById('stats-btn').classList.remove('hidden');
     document.getElementById('filter-controls').classList.remove('hidden');
 
     // タイマーをリセット
