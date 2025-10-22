@@ -1840,11 +1840,26 @@
     }, 600);
 
     // リップルエフェクト
+    // NOTE: position:fixedのボタンにはrelativeを設定しない（位置がずれるため）
     const ripple = document.createElement('div');
     ripple.className = 'ripple-effect';
-    element.style.position = 'relative';
+
+    // 元のpositionを保存
+    const originalPosition = window.getComputedStyle(element).position;
+
+    // fixed以外の場合のみrelativeを設定
+    if (originalPosition !== 'fixed') {
+      element.style.position = 'relative';
+    }
+
     element.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 600);
+    setTimeout(() => {
+      ripple.remove();
+      // positionを元に戻す（固定ボタン以外）
+      if (originalPosition !== 'fixed') {
+        element.style.position = '';
+      }
+    }, 600);
 
     // フローティングハート（ランダム位置）
     for (let i = 0; i < 3; i++) {
