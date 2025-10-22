@@ -475,12 +475,17 @@
     }
     #stats-panel .ranking-item{
       display:flex; align-items:center; gap:8px;
-      margin:6px 0; padding:6px; background:rgba(255,255,255,0.05);
+      margin:6px 0; padding:8px 10px; background:rgba(255,255,255,0.05);
       border-radius:6px; cursor:pointer;
       transition:all 0.2s;
+      border:1px solid rgba(255,255,255,0.1);
     }
     #stats-panel .ranking-item:hover{
-      background:rgba(255,255,255,0.1); transform:translateX(4px);
+      background:rgba(0,102,204,0.2); transform:translateX(4px);
+      border-color:rgba(0,102,204,0.5);
+    }
+    #stats-panel .ranking-item:active{
+      transform:translateX(2px) scale(0.98);
     }
     #stats-panel .ranking-rank{
       font-size:16px; font-weight:bold; color:#0066cc; min-width:24px;
@@ -738,6 +743,7 @@
       </div>
     </div>
     <h3 style="margin-top:16px;">🏆 人気ランキング TOP10</h3>
+    <p style="font-size:11px; opacity:0.6; margin:4px 0 8px 0;">💡 写真をクリックで表示</p>
     <ul class="ranking-list" id="ranking-list">
       <li class="loading">読み込み中...</li>
     </ul>
@@ -1768,15 +1774,22 @@
         rankingData.data.ranking.forEach((item, index) => {
           const li = document.createElement('li');
           li.className = 'ranking-item';
+
+          // 写真のインデックスを取得（表示用）
+          const foundIdx = fileList.findIndex(f => f.id === item.photoId);
+          const photoNumber = foundIdx !== -1 ? `写真 #${foundIdx + 1}` : item.photoId.substring(0, 12) + '...';
+
           li.innerHTML = `
             <span class="ranking-rank">#${index + 1}</span>
-            <span class="ranking-photo-id" style="flex:1; font-size:10px; opacity:0.7;">${item.photoId.substring(0, 12)}...</span>
+            <span class="ranking-photo-id" style="flex:1; font-size:12px; opacity:0.9;">${photoNumber}</span>
             <span class="ranking-count">❤️ ${item.count}</span>
+            <span style="font-size:14px; opacity:0.6;">👁️</span>
           `;
+
+          li.title = 'クリックでこの写真を表示';
 
           // クリックでその写真にジャンプ（もし表示中なら）
           li.onclick = () => {
-            const foundIdx = fileList.findIndex(f => f.id === item.photoId);
             if (foundIdx !== -1) {
               jumpToSlide(foundIdx);
               statsVisible = false;
