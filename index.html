@@ -260,8 +260,11 @@
     #share-btns{
       position:fixed; right:12px; bottom:150px; z-index:15;
       display:flex; flex-direction:column; gap:6px;
-      transition: opacity 0.3s ease, transform 0.3s ease;
+      transition: opacity 0.3s ease, transform 0.3s ease, bottom 0.3s ease;
       opacity: 1;
+    }
+    #share-btns.raised{
+      bottom:290px; /* サムネイル高さ140px + 元のbottom 150px */
     }
     #share-btns.hidden{
       opacity: 0;
@@ -645,6 +648,9 @@
         bottom:166px; /* 110px(いいねbottom) + 50px(いいねheight) + 6px(gap) */
         right:6px;
       }
+      #share-btns.raised{
+        bottom:306px; /* サムネイル高さ140px + 元のbottom 166px */
+      }
       .share-btn{
         width:50px;
         height:50px;
@@ -998,10 +1004,12 @@
     const btn = document.getElementById('thumbnails-toggle');
     const hud = document.getElementById('hud');
     const likeBtn = document.getElementById('like-btn');
+    const shareBtns = document.getElementById('share-btns');
 
     container.classList.toggle('show', thumbnailsVisible);
     hud.classList.toggle('raised', thumbnailsVisible);
     likeBtn.classList.toggle('raised', thumbnailsVisible);
+    shareBtns.classList.toggle('raised', thumbnailsVisible);
 
     // ボタンのテキストを切り替え
     if (thumbnailsVisible) {
