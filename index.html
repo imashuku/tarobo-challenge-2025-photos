@@ -467,13 +467,16 @@
     }
     #stats-panel .stat-item{
       display:flex; justify-content:space-between; align-items:center;
-      margin:8px 0; padding:6px 0; border-bottom:1px solid #333;
+      margin:8px 0; padding:10px 12px;
+      background:rgba(255,255,255,0.05);
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,0.1);
     }
     #stats-panel .stat-label{
-      color:#999; font-size:11px;
+      color:#aaa; font-size:12px; font-weight:500;
     }
     #stats-panel .stat-value{
-      color:#8bdcff; font-size:18px; font-weight:bold;
+      color:#00ccff; font-size:24px; font-weight:bold;
     }
     #stats-panel .ranking-list{
       margin:12px 0 0 0; padding:0; list-style:none;
@@ -777,13 +780,8 @@
         <span class="stat-value" id="stat-avg">-</span>
       </div>
     </div>
-    <h3 style="margin-top:16px;">🏆 人気ランキング TOP10</h3>
-    <p style="font-size:11px; opacity:0.6; margin:4px 0 8px 0;">💡 写真をクリックで表示</p>
-    <ul class="ranking-list" id="ranking-list">
-      <li class="loading">読み込み中...</li>
-    </ul>
-    <a href="ranking.html" target="_blank" style="display:block; margin-top:12px; padding:10px; background:rgba(0,102,204,0.2); border:1px solid rgba(0,102,204,0.5); border-radius:8px; color:#fff; text-decoration:none; text-align:center; transition:all 0.2s;">
-      📊 ランキング専用ページを開く →
+    <a href="ranking.html" target="_blank" style="display:block; margin-top:20px; padding:14px 16px; background:linear-gradient(135deg, rgba(0,102,204,0.3), rgba(0,204,255,0.3)); border:2px solid rgba(0,102,204,0.6); border-radius:12px; color:#fff; text-decoration:none; text-align:center; transition:all 0.3s; font-weight:bold; font-size:14px;">
+      🏆 人気ランキング TOP10を見る →
     </a>
   </div>
 
@@ -1808,67 +1806,12 @@
         document.getElementById('stat-avg').textContent = summaryData.data.avgLikesPerPhoto.toFixed(1);
       }
 
-      // ランキング取得
-      const rankingRes = await fetch('/api/analytics?type=ranking&limit=10');
-      const rankingData = await rankingRes.json();
-
-      if (rankingData.success) {
-        // 全写真リストを取得（ファイル名取得のため）
-        const photosRes = await fetch('/api/photos');
-        const photosData = await photosRes.json();
-
-        // photoId → name のマップを作成
-        const photoMap = new Map();
-        if (photosData.success) {
-          photosData.files.forEach(file => {
-            photoMap.set(file.id, file.name);
-          });
-        }
-
-        const rankingList = document.getElementById('ranking-list');
-        rankingList.innerHTML = '';
-
-        rankingData.data.ranking.forEach((item, index) => {
-          const li = document.createElement('li');
-          li.className = 'ranking-item';
-
-          // ファイル名を取得（拡張子なし）
-          const fullName = photoMap.get(item.photoId);
-          const photoName = fullName ? fullName.replace(/\.[^.]+$/, '') : item.photoId.substring(0, 12) + '...';
-
-          // 現在の50枚に含まれているかチェック
-          const foundIdx = fileList.findIndex(f => f.id === item.photoId);
-
-          li.innerHTML = `
-            <span class="ranking-rank">#${index + 1}</span>
-            <span class="ranking-photo-id" style="flex:1; font-size:12px; opacity:0.9;">${photoName}</span>
-            <span class="ranking-count">❤️ ${item.count}</span>
-            <span style="font-size:14px; opacity:0.6;">👁️</span>
-          `;
-
-          li.title = foundIdx !== -1 ? 'クリックでこの写真を表示' : 'この写真は現在表示されていません';
-
-          // クリックでその写真にジャンプ（もし表示中なら）
-          li.onclick = () => {
-            if (foundIdx !== -1) {
-              jumpToSlide(foundIdx);
-              statsVisible = false;
-              document.getElementById('stats-panel').classList.remove('show');
-            } else {
-              // 表示されていない場合はランキングページへ
-              window.open('ranking.html', '_blank');
-            }
-          };
-
-          rankingList.appendChild(li);
-        });
-
-        statsData = { summary: summaryData.data, ranking: rankingData.data.ranking };
-      }
+      // ランキングデータは取得しない（専用ページに任せる）
+      statsData = { summary: summaryData.data };
 
     } catch (error) {
       console.error('Failed to load stats:', error);
-      document.getElementById('ranking-list').innerHTML = '<li class="loading">読み込みに失敗しました</li>';
+      document.getElementById('stat-total').textContent = 'エラー';
     }
   }
 
