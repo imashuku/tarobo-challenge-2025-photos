@@ -1790,6 +1790,18 @@
       const rankingData = await rankingRes.json();
 
       if (rankingData.success) {
+        // 全写真リストを取得（ファイル名取得のため）
+        const photosRes = await fetch('/api/photos');
+        const photosData = await photosRes.json();
+
+        // photoId → name のマップを作成
+        const photoMap = new Map();
+        if (photosData.success) {
+          photosData.files.forEach(file => {
+            photoMap.set(file.id, file.name);
+          });
+        }
+
         const rankingList = document.getElementById('ranking-list');
         rankingList.innerHTML = '';
 
@@ -1797,18 +1809,21 @@
           const li = document.createElement('li');
           li.className = 'ranking-item';
 
-          // 写真のインデックスを取得（表示用）
+          // ファイル名を取得（拡張子なし）
+          const fullName = photoMap.get(item.photoId);
+          const photoName = fullName ? fullName.replace(/\.[^.]+$/, '') : item.photoId.substring(0, 12) + '...';
+
+          // 現在の50枚に含まれているかチェック
           const foundIdx = fileList.findIndex(f => f.id === item.photoId);
-          const photoNumber = foundIdx !== -1 ? `写真 #${foundIdx + 1}` : item.photoId.substring(0, 12) + '...';
 
           li.innerHTML = `
             <span class="ranking-rank">#${index + 1}</span>
-            <span class="ranking-photo-id" style="flex:1; font-size:12px; opacity:0.9;">${photoNumber}</span>
+            <span class="ranking-photo-id" style="flex:1; font-size:12px; opacity:0.9;">${photoName}</span>
             <span class="ranking-count">❤️ ${item.count}</span>
             <span style="font-size:14px; opacity:0.6;">👁️</span>
           `;
 
-          li.title = 'クリックでこの写真を表示';
+          li.title = foundIdx !== -1 ? 'クリックでこの写真を表示' : 'この写真は現在表示されていません';
 
           // クリックでその写真にジャンプ（もし表示中なら）
           li.onclick = () => {
@@ -1816,6 +1831,9 @@
               jumpToSlide(foundIdx);
               statsVisible = false;
               document.getElementById('stats-panel').classList.remove('show');
+            } else {
+              // 表示されていない場合はランキングページへ
+              window.open('ranking.html', '_blank');
             }
           };
 
