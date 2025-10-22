@@ -788,10 +788,11 @@
   let slides = [], idx = 0, timer = null, running = false, progressTimer = null;
   let fileList = []; // ファイル名保存用
   let currentEffect = 'fade'; // 現在のエフェクト
-  let likedImages = new Set(); // いいねした画像のインデックス
-  let imageLikeCounts = {}; // 各画像のいいね数を保存 {index: count}
+  let likedImages = new Set(); // いいねした画像のphotoId（Google Drive ID）
+  let imageLikeCounts = {}; // 各画像のいいね数を保存 {photoId: count}
   let bgmAudio = null; // BGMオーディオ要素
   let allSlides = []; // 全スライドのバックアップ
+  let allPhotosData = []; // 全画像データ（1146枚）を保存 {id, name, url}
   let currentFilter = 'all'; // 現在のフィルター状態
   let thumbnailsVisible = false; // サムネイル表示状態
 
@@ -817,7 +818,15 @@
 
       // 全画像リストを取得してランダムに50枚選択
       const allPhotos = result.files;
-      const shuffled = allPhotos.sort(() => Math.random() - 0.5);
+
+      // 全画像データをグローバルに保存（いいねフィルタ用）
+      allPhotosData = allPhotos.map(f => ({
+        id: f.id,
+        name: f.name,
+        url: `https://drive.google.com/thumbnail?id=${f.id}&sz=w1200`
+      }));
+
+      const shuffled = [...allPhotos].sort(() => Math.random() - 0.5);
       const picked = shuffled.slice(0, COUNT);
 
       console.log(`✅ Loaded ${result.total} total images, randomly picked ${picked.length} photos`);
@@ -897,7 +906,8 @@
       img.src = f.url;
       img.alt = f.name || `photo-${i+1}`;
       img.className = 'slide';
-      img.dataset.index = i; // インデックスを保存
+      img.dataset.index = i; // 配列内インデックスを保存
+      img.dataset.photoId = f.id; // Google Drive IDを保存
       if (i >= PRELOAD_COUNT) img.loading = 'lazy';
       img.onerror = () => { img.remove(); }; // 403等は除去
       img.onload = () => { added++; };       // 読めたものだけカウント
@@ -921,12 +931,11 @@
       if (f instanceof HTMLImageElement) {
         thumb.src = f.src;
         thumb.alt = f.alt;
-        const originalIndex = parseInt(f.dataset.index, 10);
         thumb.dataset.index = i;
-        thumb.dataset.originalIndex = originalIndex;
+        thumb.dataset.photoId = f.dataset.photoId;
 
-        // 元のインデックスでいいね状態をチェック
-        if (likedImages.has(originalIndex)) {
+        // photoIdでいいね状態をチェック
+        if (likedImages.has(f.dataset.photoId)) {
           thumb.classList.add('liked');
         }
       } else {
@@ -934,9 +943,9 @@
         thumb.src = f.url;
         thumb.alt = f.name || `thumb-${i+1}`;
         thumb.dataset.index = i;
-        thumb.dataset.originalIndex = i;
+        thumb.dataset.photoId = f.id;
 
-        if (likedImages.has(i)) {
+        if (likedImages.has(f.id)) {
           thumb.classList.add('liked');
         }
       }
@@ -956,9 +965,9 @@
   function updateActiveThumbnail(){
     document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
       thumb.classList.toggle('active', i === idx);
-      // いいね状態も更新（元のインデックスを使用）
-      const originalIndex = parseInt(thumb.dataset.originalIndex || thumb.dataset.index, 10);
-      thumb.classList.toggle('liked', likedImages.has(originalIndex));
+      // いいね状態も更新（photoIdを使用）
+      const photoId = thumb.dataset.photoId;
+      thumb.classList.toggle('liked', likedImages.has(photoId));
     });
   }
 
@@ -1030,7 +1039,7 @@
     // APIからいいね数を取得（バックグラウンドで実行）
     const currentFile = fileList[idx];
     if (currentFile && currentFile.id) {
-      fetchLikeCount(currentFile.id, idx);
+      fetchLikeCount(currentFile.id);
     }
 
     updateLikeButton();
@@ -1038,20 +1047,21 @@
   }
 
   // APIからいいね数を取得
-  async function fetchLikeCount(photoId, imageIdx){
+  async function fetchLikeCount(photoId){
     try {
       const response = await fetch(`/api/like?photoId=${photoId}`);
       const result = await response.json();
 
       if (result.success) {
-        imageLikeCounts[imageIdx] = result.count || 0;
+        imageLikeCounts[photoId] = result.count || 0;
         if (result.liked) {
-          likedImages.add(imageIdx);
+          likedImages.add(photoId);
         } else {
-          likedImages.delete(imageIdx);
+          likedImages.delete(photoId);
         }
         // 現在表示中の画像なら更新
-        if (imageIdx === idx) {
+        const currentFile = fileList[idx];
+        if (currentFile && currentFile.id === photoId) {
           updateLikeButton();
           updateActiveThumbnail();
         }
@@ -1065,14 +1075,17 @@
   function updateLikeButton(){
     const likeBtn = document.getElementById('like-btn');
     const currentFile = fileList[idx];
-    const currentLikes = imageLikeCounts[idx] || 0;
+    if (!currentFile || !currentFile.id) return;
 
-    console.log(`updateLikeButton: idx=${idx}, likes=${currentLikes}, liked=${likedImages.has(idx)}`);
+    const photoId = currentFile.id;
+    const currentLikes = imageLikeCounts[photoId] || 0;
+
+    console.log(`updateLikeButton: photoId=${photoId}, likes=${currentLikes}, liked=${likedImages.has(photoId)}`);
 
     // いいね数が0の場合はバッジを非表示
     const countBadge = currentLikes > 0 ? `<span id="like-count">${currentLikes}</span>` : '';
 
-    if (likedImages.has(idx)) {
+    if (likedImages.has(photoId)) {
       // いいね済み: 赤いハート
       likeBtn.innerHTML = `❤️${countBadge}`;
     } else {
@@ -1092,7 +1105,7 @@
     }
 
     const photoId = currentFile.id;
-    const isLiked = likedImages.has(idx);
+    const isLiked = likedImages.has(photoId);
 
     try {
       if (isLiked) {
@@ -1104,8 +1117,8 @@
         const result = await response.json();
 
         if (result.success) {
-          likedImages.delete(idx);
-          imageLikeCounts[idx] = result.count || 0;
+          likedImages.delete(photoId);
+          imageLikeCounts[photoId] = result.count || 0;
         }
       } else {
         // いいねを追加
@@ -1118,8 +1131,8 @@
         const result = await response.json();
 
         if (result.success) {
-          likedImages.add(idx);
-          imageLikeCounts[idx] = result.count || 1;
+          likedImages.add(photoId);
+          imageLikeCounts[photoId] = result.count || 1;
 
           // バイブレーション（Androidのみ対応、iOSは非対応）
           try {
@@ -1140,9 +1153,9 @@
       console.error('Failed to toggle like:', error);
       // エラー時はローカルのみ更新（オフライン対応）
       if (isLiked) {
-        likedImages.delete(idx);
+        likedImages.delete(photoId);
       } else {
-        likedImages.add(idx);
+        likedImages.add(photoId);
 
         // バイブレーション（Androidのみ対応、iOSは非対応）
         try {
@@ -1159,7 +1172,7 @@
   }
 
   // フィルター切り替え
-  function filterSlides(filter){
+  async function filterSlides(filter){
     currentFilter = filter;
     const wasRunning = running;
     if (running) pause();
@@ -1169,20 +1182,51 @@
     document.getElementById('filter-liked').classList.toggle('active', filter === 'liked');
 
     if (filter === 'liked') {
-      // いいねした写真だけを表示
-      const likedIndices = Array.from(likedImages);
-      if (likedIndices.length === 0) {
+      // いいねした写真だけを表示（全1146枚から検索）
+      const likedPhotoIds = Array.from(likedImages);
+      if (likedPhotoIds.length === 0) {
         alert('まだいいねした写真がありません。\n気に入った写真にハートボタンを押してください！');
         document.getElementById('filter-all').click();
         return;
       }
 
-      // いいねした写真のみに絞り込み
-      slides = allSlides.filter((_, i) => likedImages.has(i));
+      // 全画像データからいいねした写真を抽出
+      const likedPhotos = allPhotosData.filter(photo => likedImages.has(photo.id));
+
+      if (likedPhotos.length === 0) {
+        alert('いいねした写真が見つかりませんでした。');
+        document.getElementById('filter-all').click();
+        return;
+      }
+
+      // いいねした写真で新しいスライドを作成
+      const stage = document.getElementById('stage');
+      stage.innerHTML = '';
+      slides = [];
+      fileList = likedPhotos;
+
+      likedPhotos.forEach((f, i) => {
+        const img = document.createElement('img');
+        img.src = f.url;
+        img.alt = f.name || `photo-${i+1}`;
+        img.className = 'slide';
+        img.dataset.index = i;
+        img.dataset.photoId = f.id;
+        img.loading = 'lazy';
+        stage.appendChild(img);
+        slides.push(img);
+      });
+
       idx = 0;
+      console.log(`✅ いいねフィルタ: ${likedPhotos.length}枚の写真を表示`);
     } else {
-      // 全ての写真を表示
+      // 全ての写真を表示（元のランダム50枚に戻す）
       slides = [...allSlides];
+      fileList = slides.map(slide => ({
+        id: slide.dataset.photoId,
+        name: slide.alt,
+        url: slide.src
+      }));
       idx = 0;
     }
 
@@ -1281,7 +1325,9 @@
   function updateModalLikeButton(){
     const modalLikeBtn = document.getElementById('modal-like-btn');
     const currentFile = fileList[idx];
-    if (likedImages.has(idx)) {
+    if (!currentFile || !currentFile.id) return;
+
+    if (likedImages.has(currentFile.id)) {
       modalLikeBtn.textContent = '❤️';
       modalLikeBtn.classList.add('liked');
     } else {
@@ -1508,7 +1554,10 @@
 
     // アニメーションとバイブレーションはtoggleLike内で処理されるが、
     // モーダルのボタンにもアニメーションを適用
-    const wasLiked = likedImages.has(idx);
+    const currentFile = fileList[idx];
+    if (!currentFile || !currentFile.id) return;
+
+    const wasLiked = likedImages.has(currentFile.id);
     await toggleLike();
 
     if (!wasLiked) {
