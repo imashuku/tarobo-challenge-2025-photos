@@ -161,9 +161,11 @@
     }
 
     .photo-id {
-      font-size: 12px;
-      opacity: 0.5;
-      font-family: monospace;
+      font-size: 14px;
+      opacity: 0.7;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-weight: 500;
+      color: #00ccff;
     }
 
     .expand-icon {
@@ -264,14 +266,15 @@
     // ランキングデータを取得
     async function loadRanking() {
       try {
-        const response = await fetch('/api/analytics?type=ranking&limit=10');
-        const data = await response.json();
+        // ランキングデータを取得
+        const rankingResponse = await fetch('/api/analytics?type=ranking&limit=10');
+        const rankingData = await rankingResponse.json();
 
-        if (!data.success) {
-          throw new Error(data.error || 'データ取得に失敗しました');
+        if (!rankingData.success) {
+          throw new Error(rankingData.error || 'データ取得に失敗しました');
         }
 
-        const ranking = data.data.ranking;
+        const ranking = rankingData.data.ranking;
 
         if (ranking.length === 0) {
           document.getElementById('content').innerHTML = `
@@ -283,7 +286,32 @@
           return;
         }
 
-        renderRanking(ranking);
+        // 全写真リストを取得（ファイル名を取得するため）
+        const photosResponse = await fetch('/api/photos');
+        const photosData = await photosResponse.json();
+
+        if (!photosData.success) {
+          throw new Error('写真リストの取得に失敗しました');
+        }
+
+        // photoId → name のマップを作成
+        const photoMap = new Map();
+        photosData.files.forEach(file => {
+          photoMap.set(file.id, file.name);
+        });
+
+        // ランキングにファイル名を追加
+        const rankingWithNames = ranking.map(item => {
+          const fullName = photoMap.get(item.photoId) || item.photoId;
+          // 拡張子を除く（例: _NIK1964.jpg → _NIK1964）
+          const displayName = fullName.replace(/\.[^.]+$/, '');
+          return {
+            ...item,
+            name: displayName
+          };
+        });
+
+        renderRanking(rankingWithNames);
 
       } catch (error) {
         console.error('Error loading ranking:', error);
@@ -329,7 +357,7 @@
               <div class="like-count">
                 ❤️ ${item.count}
               </div>
-              <div class="photo-id">${item.photoId}</div>
+              <div class="photo-id">${item.name || item.photoId}</div>
             </div>
           </div>
         `;
