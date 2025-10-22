@@ -491,6 +491,94 @@
       pointer-events:none;
     }
 
+    /* Instagram風いいね通知 */
+    #like-notification {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 200;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    #like-notification.show {
+      opacity: 1;
+    }
+    #like-notification-content {
+      font-size: 64px;
+      text-align: center;
+      animation: likePopup 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      filter: drop-shadow(0 4px 20px rgba(0,0,0,0.4));
+    }
+    #like-notification-content.unlike {
+      font-size: 48px;
+      opacity: 0.7;
+    }
+    @keyframes likePopup {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* サムネイル上のいいね解除ボタン */
+    .thumbnail-container {
+      position: relative;
+      display: inline-block;
+    }
+    .thumbnail-like-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 36px;
+      height: 36px;
+      background: rgba(0,0,0,0.75);
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 20px;
+      transition: all 0.2s ease;
+      z-index: 10;
+      backdrop-filter: blur(4px);
+    }
+    .thumbnail-like-btn:hover {
+      transform: scale(1.15);
+      background: rgba(255,50,50,0.9);
+      border-color: rgba(255,255,255,0.6);
+    }
+    .thumbnail-like-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* いいねボタンのツールチップ（PC用） */
+    #like-btn::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
+      background: rgba(0,0,0,0.9);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    #like-btn:hover::after {
+      opacity: 1;
+    }
+    @media (max-width: 768px) {
+      #like-btn::after {
+        display: none; /* モバイルではツールチップ非表示 */
+      }
+    }
+
     /* リアルタイム通知 */
     #realtime-notify{
       position:fixed; top:80px; right:12px; z-index:100;
@@ -725,10 +813,15 @@
   </div>
 
   <!-- いいねボタン -->
-  <button id="like-btn" title="この写真にいいね！（Lキー）">
+  <button id="like-btn" title="この写真にいいね！（Lキー）" data-tooltip="いいね">
     🩶
     <span id="like-count">0</span>
   </button>
+
+  <!-- Instagram風いいね通知 -->
+  <div id="like-notification">
+    <div id="like-notification-content"></div>
+  </div>
 
   <!-- SNSシェアボタン -->
   <div id="share-btns">
@@ -923,8 +1016,15 @@
     const wrapper = document.getElementById('thumbnails-wrapper');
     wrapper.innerHTML = '';
 
+    // いいねフィルタ中かどうかをチェック
+    const isLikedFilter = currentFilter === 'liked';
+
     // listがスライド要素の配列の場合と、ファイル情報の配列の場合がある
     list.forEach((f, i) => {
+      // サムネイルコンテナ（いいねボタンを配置するため）
+      const container = document.createElement('div');
+      container.className = 'thumbnail-container';
+
       const thumb = document.createElement('img');
 
       // スライド要素の場合
@@ -955,10 +1055,88 @@
       // クリックで該当画像にジャンプ
       thumb.onclick = () => jumpToSlide(i);
 
-      wrapper.appendChild(thumb);
+      container.appendChild(thumb);
+
+      // いいねフィルタ中の場合、❤️解除ボタンを追加
+      if (isLikedFilter) {
+        const likeBtn = document.createElement('button');
+        likeBtn.className = 'thumbnail-like-btn';
+        likeBtn.innerHTML = '❤️';
+        likeBtn.title = 'いいね解除';
+
+        likeBtn.onclick = async (e) => {
+          e.stopPropagation(); // サムネイルクリックと干渉しないように
+
+          const photoId = thumb.dataset.photoId;
+          if (!photoId) return;
+
+          // いいね解除
+          await removeLikeFromThumbnail(photoId, container);
+        };
+
+        container.appendChild(likeBtn);
+      }
+
+      wrapper.appendChild(container);
     });
 
     updateActiveThumbnail();
+  }
+
+  // サムネイルからいいね解除
+  async function removeLikeFromThumbnail(photoId, containerElement) {
+    try {
+      // APIでいいね解除
+      const response = await fetch(`/api/like?photoId=${photoId}`, {
+        method: 'DELETE'
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // ローカルから削除
+        likedImages.delete(photoId);
+        imageLikeCounts[photoId] = result.count || 0;
+
+        // サムネイルをフェードアウトして削除
+        containerElement.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        containerElement.style.opacity = '0';
+        containerElement.style.transform = 'scale(0.8)';
+
+        setTimeout(() => {
+          containerElement.remove();
+
+          // いいねフィルタ中のスライド配列から削除
+          const photoIndex = slides.findIndex(slide => slide.dataset.photoId === photoId);
+          if (photoIndex !== -1) {
+            slides[photoIndex].remove(); // DOM から削除
+            slides.splice(photoIndex, 1); // 配列から削除
+            fileList.splice(photoIndex, 1); // ファイルリストからも削除
+
+            // 現在のインデックスを調整
+            if (idx >= slides.length) {
+              idx = Math.max(0, slides.length - 1);
+            }
+
+            // 画像情報を更新
+            if (slides.length > 0) {
+              slides.forEach(s => s.classList.remove('active'));
+              slides[idx].classList.add('active');
+              updateImageInfo();
+            } else {
+              // いいねした写真が全て無くなった場合、全表示に戻す
+              alert('いいねした写真が全て解除されました。\n全表示モードに戻ります。');
+              document.getElementById('filter-all').click();
+            }
+          }
+        }, 300);
+
+        saveLikesToStorage();
+      }
+    } catch (error) {
+      console.error('Failed to remove like:', error);
+      alert('いいね解除に失敗しました。もう一度お試しください。');
+    }
   }
 
   // アクティブなサムネイルを更新
@@ -1751,8 +1929,96 @@
   // キーボード操作でもUIを表示
   document.addEventListener('keydown', resetUITimer);
 
+  // ===== Instagram風ダブルタップでいいね機能 =====
+  let lastTapTime = 0;
+  const DOUBLE_TAP_DELAY = 300; // 0.3秒以内の2回タップを検出
+
+  function setupDoubleTap() {
+    const stage = document.getElementById('stage');
+
+    stage.addEventListener('click', async (e) => {
+      // モーダルが開いている場合は無効
+      const modal = document.getElementById('modal');
+      if (modal.classList.contains('show')) {
+        return;
+      }
+
+      // UIボタンやコントロールのクリックは除外
+      if (e.target.id === 'like-btn' ||
+          e.target.closest('#like-btn') ||
+          e.target.closest('#share-btns') ||
+          e.target.closest('#filter-controls') ||
+          e.target.closest('#hud')) {
+        return;
+      }
+
+      const currentTime = new Date().getTime();
+      const tapGap = currentTime - lastTapTime;
+
+      if (tapGap < DOUBLE_TAP_DELAY && tapGap > 0) {
+        // ダブルタップ検出
+        const currentFile = fileList[idx];
+        if (!currentFile || !currentFile.id) return;
+
+        const photoId = currentFile.id;
+        const isLiked = likedImages.has(photoId);
+
+        // 既にいいね済みの場合は何もしない（Instagramと同じ）
+        if (!isLiked) {
+          // いいねを追加
+          await toggleLike();
+
+          // ダブルタップエフェクト（画面中央に大きなハート）
+          showDoubleTapHeart(e);
+        }
+
+        lastTapTime = 0; // リセット
+      } else {
+        lastTapTime = currentTime;
+      }
+    });
+  }
+
+  // ダブルタップ時の大きなハートアニメーション（Instagram風）
+  function showDoubleTapHeart(event) {
+    const heart = document.createElement('div');
+    heart.innerHTML = '❤️';
+    heart.style.cssText = `
+      position: fixed;
+      font-size: 120px;
+      pointer-events: none;
+      z-index: 250;
+      animation: doubleTapHeart 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      filter: drop-shadow(0 8px 30px rgba(0,0,0,0.5));
+    `;
+
+    // クリック位置に表示
+    const x = event.clientX || window.innerWidth / 2;
+    const y = event.clientY || window.innerHeight / 2;
+    heart.style.left = (x - 60) + 'px';
+    heart.style.top = (y - 60) + 'px';
+
+    document.body.appendChild(heart);
+
+    setTimeout(() => heart.remove(), 800);
+  }
+
+  // CSSアニメーションを動的に追加
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes doubleTapHeart {
+      0% { transform: scale(0); opacity: 0; }
+      15% { transform: scale(1.2); opacity: 1; }
+      30% { transform: scale(1); opacity: 1; }
+      70% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(0.8); opacity: 0; }
+    }
+  `;
+  document.head.appendChild(style);
+
   // 初期表示
   resetUITimer();
+  setupDoubleTap();
 
   // ===== 新機能: 統計情報・ランキング・リアルタイム更新 =====
 
@@ -1851,18 +2117,64 @@
     }
   }
 
-  // toggleLike関数を拡張（エフェクト追加）
+  // Instagram風いいね通知を表示
+  function showLikeNotification(type) {
+    const notification = document.getElementById('like-notification');
+    const content = document.getElementById('like-notification-content');
+
+    // 既存のアニメーションをリセット
+    notification.classList.remove('show');
+    content.classList.remove('unlike');
+
+    if (type === 'like') {
+      content.textContent = '❤️';
+      content.classList.remove('unlike');
+    } else if (type === 'unlike') {
+      content.textContent = '🤍';
+      content.classList.add('unlike');
+    }
+
+    // アニメーションを再トリガー
+    setTimeout(() => {
+      notification.classList.add('show');
+    }, 10);
+
+    // 0.5秒後にフェードアウト
+    setTimeout(() => {
+      notification.classList.remove('show');
+    }, 500);
+  }
+
+  // toggleLike関数を拡張（Instagram風通知追加）
   const originalToggleLike = toggleLike;
   toggleLike = async function() {
-    const wasLiked = likedImages.has(idx);
+    const currentFile = fileList[idx];
+    if (!currentFile || !currentFile.id) return;
+
+    const photoId = currentFile.id;
+    const wasLiked = likedImages.has(photoId);
 
     // 元の関数を実行
     await originalToggleLike.call(this);
 
-    // いいね追加時のみエフェクト（取り消し時は実行しない）
-    if (!wasLiked && likedImages.has(idx)) {
+    // 現在の状態を確認
+    const isNowLiked = likedImages.has(photoId);
+
+    if (!wasLiked && isNowLiked) {
+      // いいね追加時
       const likeBtn = document.getElementById('like-btn');
       createEnhancedLikeEffect(likeBtn);
+      showLikeNotification('like');
+
+      // ツールチップを「解除」に変更
+      likeBtn.setAttribute('data-tooltip', '解除');
+    } else if (wasLiked && !isNowLiked) {
+      // いいね解除時
+      showLikeNotification('unlike');
+
+      // ツールチップを「いいね」に変更
+      const likeBtn = document.getElementById('like-btn');
+      likeBtn.setAttribute('data-tooltip', 'いいね');
     }
   };
 
