@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Tarobo Faces - Random 30 Slideshow</title>
   <style>
     :root { --fade-ms: 1200; --show-ms: 2500; }
@@ -1895,11 +1895,8 @@
     }
   });
 
-  // ダブルクリック/ダブルタップでフルスクリーン
-  stage.addEventListener('dblclick', ()=> {
-    if (!document.fullscreenElement) stage.requestFullscreen().catch(()=>{});
-    else document.exitFullscreen().catch(()=>{});
-  });
+  // ダブルクリック/ダブルタップでフルスクリーン機能は削除
+  // （いいね機能のダブルタップと競合するため）
 
   // UI自動非表示機能
   let uiHideTimer = null;
