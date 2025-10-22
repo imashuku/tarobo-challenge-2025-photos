@@ -1120,8 +1120,6 @@
         if (result.success) {
           likedImages.add(idx);
           imageLikeCounts[idx] = result.count || 1;
-          likeBtn.classList.add('liked');
-          setTimeout(() => likeBtn.classList.remove('liked'), 600);
 
           // バイブレーション（Androidのみ対応、iOSは非対応）
           try {
@@ -1145,8 +1143,6 @@
         likedImages.delete(idx);
       } else {
         likedImages.add(idx);
-        likeBtn.classList.add('liked');
-        setTimeout(() => likeBtn.classList.remove('liked'), 600);
 
         // バイブレーション（Androidのみ対応、iOSは非対応）
         try {
@@ -1847,10 +1843,12 @@
   const originalToggleLike = toggleLike;
   toggleLike = async function() {
     const wasLiked = likedImages.has(idx);
-    await originalToggleLike();
 
+    // 元の関数を実行
+    await originalToggleLike.call(this);
+
+    // いいね追加時のみエフェクト（取り消し時は実行しない）
     if (!wasLiked && likedImages.has(idx)) {
-      // いいね追加時のみエフェクト
       const likeBtn = document.getElementById('like-btn');
       createEnhancedLikeEffect(likeBtn);
     }
