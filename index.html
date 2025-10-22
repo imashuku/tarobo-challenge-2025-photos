@@ -960,6 +960,16 @@
     // ボタンのテキストを切り替え
     if (thumbnailsVisible) {
       btn.textContent = '✕ 閉じる';
+
+      // 現在のフィルター状態に応じてサムネイルを再生成
+      if (currentFilter === 'liked') {
+        // いいねフィルタ中は、いいねした写真だけを表示
+        createThumbnails(slides);
+      } else {
+        // 全表示モードでは、全写真を表示
+        createThumbnails(slides);
+      }
+
       updateActiveThumbnail();
       // アクティブなサムネイルにスクロール
       const activeThumbnail = document.querySelector('.thumbnail.active');
@@ -1162,6 +1172,12 @@
     if (slides[idx]) {
       slides[idx].classList.add('active');
       updateImageInfo();
+    }
+
+    // サムネイルが表示中なら再生成
+    if (thumbnailsVisible) {
+      createThumbnails(slides);
+      updateActiveThumbnail();
     }
 
     if (wasRunning) play();
