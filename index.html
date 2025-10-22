@@ -913,17 +913,35 @@
     const wrapper = document.getElementById('thumbnails-wrapper');
     wrapper.innerHTML = '';
 
+    // listがスライド要素の配列の場合と、ファイル情報の配列の場合がある
     list.forEach((f, i) => {
       const thumb = document.createElement('img');
-      thumb.src = f.url;
-      thumb.alt = f.name || `thumb-${i+1}`;
-      thumb.className = 'thumbnail';
-      thumb.dataset.index = i;
 
-      // いいねした画像にはマーク
-      if (likedImages.has(i)) {
-        thumb.classList.add('liked');
+      // スライド要素の場合
+      if (f instanceof HTMLImageElement) {
+        thumb.src = f.src;
+        thumb.alt = f.alt;
+        const originalIndex = parseInt(f.dataset.index, 10);
+        thumb.dataset.index = i;
+        thumb.dataset.originalIndex = originalIndex;
+
+        // 元のインデックスでいいね状態をチェック
+        if (likedImages.has(originalIndex)) {
+          thumb.classList.add('liked');
+        }
+      } else {
+        // ファイル情報の場合（初回読み込み時）
+        thumb.src = f.url;
+        thumb.alt = f.name || `thumb-${i+1}`;
+        thumb.dataset.index = i;
+        thumb.dataset.originalIndex = i;
+
+        if (likedImages.has(i)) {
+          thumb.classList.add('liked');
+        }
       }
+
+      thumb.className = 'thumbnail';
 
       // クリックで該当画像にジャンプ
       thumb.onclick = () => jumpToSlide(i);
@@ -938,8 +956,9 @@
   function updateActiveThumbnail(){
     document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
       thumb.classList.toggle('active', i === idx);
-      // いいね状態も更新
-      thumb.classList.toggle('liked', likedImages.has(i));
+      // いいね状態も更新（元のインデックスを使用）
+      const originalIndex = parseInt(thumb.dataset.originalIndex || thumb.dataset.index, 10);
+      thumb.classList.toggle('liked', likedImages.has(originalIndex));
     });
   }
 
