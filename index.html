@@ -857,16 +857,19 @@
         throw new Error(result.error || 'Unknown error');
       }
 
-      const { data } = result;
+      // 全画像リストを取得してランダムに50枚選択
+      const allPhotos = result.files;
+      const shuffled = allPhotos.sort(() => Math.random() - 0.5);
+      const picked = shuffled.slice(0, COUNT);
 
-      console.log(`✅ Loaded ${data.count} photos from ${data.total} total images`);
+      console.log(`✅ Loaded ${result.total} total images, randomly picked ${picked.length} photos`);
       if (result.cached) {
         console.log(`📦 Cache age: ${result.cacheAge} seconds`);
       }
 
       return {
-        all: data.total,
-        pick: data.photos
+        all: result.total,
+        pick: picked
       };
 
     } catch (error) {

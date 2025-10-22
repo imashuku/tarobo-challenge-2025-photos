@@ -1,9 +1,9 @@
-// Vercel Serverless Function: Google Drive APIからランダムな写真リストを取得
+// Vercel Serverless Function: Google Drive APIから全画像リストを取得
 // キャッシュを使用して、429エラーを防ぎます
+// ランダム選択はフロントエンド側で行います（リロードごとに異なる写真を表示）
 
 const FOLDER_ID = process.env.FOLDER_ID;
 const API_KEY = process.env.API_KEY;
-const COUNT = 50; // 表示枚数
 
 // 環境変数チェック
 if (!FOLDER_ID || !API_KEY) {
@@ -54,17 +54,15 @@ async function fetchAllFiles() {
 }
 
 /**
- * ランダムにシャッフルして指定枚数を返す
+ * 全画像を統一フォーマットに変換
+ * ランダム選択はフロントエンド側で行う
  */
-function getRandomPhotos(files, count) {
-  const shuffled = [...files].sort(() => Math.random() - 0.5);
-  const picked = shuffled.slice(0, count).map(f => ({
+function formatPhotos(files) {
+  return files.map(f => ({
     url: `https://drive.google.com/thumbnail?id=${f.id}&sz=w1200`,
     name: f.name,
     id: f.id
   }));
-
-  return picked;
 }
 
 /**
@@ -85,7 +83,8 @@ export default async function handler(req, res) {
         success: true,
         cached: true,
         cacheAge: Math.floor((now - cacheTime) / 1000),
-        data: cache
+        total: cache.length,
+        files: cache
       });
     }
 
@@ -95,23 +94,19 @@ export default async function handler(req, res) {
     const allFiles = await fetchAllFiles();
     console.log(`Fetched ${allFiles.length} images from Google Drive`);
 
-    // ランダムに選択
-    const photos = getRandomPhotos(allFiles, COUNT);
+    // 全画像をフォーマット（ランダム選択はフロントエンド側）
+    const photos = formatPhotos(allFiles);
 
     // キャッシュに保存
-    cache = {
-      total: allFiles.length,
-      count: photos.length,
-      photos: photos,
-      timestamp: now
-    };
+    cache = photos;
     cacheTime = now;
 
     // レスポンス
     return res.status(200).json({
       success: true,
       cached: false,
-      data: cache
+      total: photos.length,
+      files: photos
     });
 
   } catch (error) {
@@ -123,7 +118,8 @@ export default async function handler(req, res) {
         success: true,
         cached: true,
         cacheAge: Math.floor((Date.now() - cacheTime) / 1000),
-        data: cache,
+        total: cache.length,
+        files: cache,
         warning: 'Returned cached data due to error'
       });
     }
