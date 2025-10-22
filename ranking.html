@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>人気ランキング TOP10 - 太郎坊チャレンジ2025</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1e 100%);
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 20px;
+    }
+
+    header h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #0066cc, #00ccff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      font-size: 14px;
+      opacity: 0.7;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 20px;
+      padding: 10px 20px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: #fff;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+
+    .back-link:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateX(-4px);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      font-size: 18px;
+      opacity: 0.7;
+    }
+
+    .error {
+      text-align: center;
+      padding: 60px 20px;
+      color: #ff6b6b;
+    }
+
+    .ranking-grid {
+      display: grid;
+      gap: 30px;
+      margin-top: 30px;
+    }
+
+    .ranking-item {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .ranking-item:hover {
+      transform: translateY(-4px);
+      border-color: rgba(0,102,204,0.5);
+      box-shadow: 0 8px 32px rgba(0,102,204,0.3);
+    }
+
+    .rank-badge {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: linear-gradient(135deg, #0066cc, #00ccff);
+      color: #fff;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      z-index: 2;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .rank-badge.gold {
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+    }
+
+    .rank-badge.silver {
+      background: linear-gradient(135deg, #C0C0C0, #A8A8A8);
+    }
+
+    .rank-badge.bronze {
+      background: linear-gradient(135deg, #CD7F32, #B8860B);
+    }
+
+    .photo-container {
+      position: relative;
+      width: 100%;
+      padding-top: 66.67%; /* 3:2 aspect ratio */
+      background: #000;
+      overflow: hidden;
+    }
+
+    .photo-container img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+
+    .photo-container img:hover {
+      transform: scale(1.05);
+    }
+
+    .item-info {
+      padding: 20px;
+    }
+
+    .like-count {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 24px;
+      color: #ff6b6b;
+      margin-bottom: 12px;
+    }
+
+    .photo-id {
+      font-size: 12px;
+      opacity: 0.5;
+      font-family: monospace;
+    }
+
+    .expand-icon {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .ranking-item:hover .expand-icon {
+      opacity: 1;
+    }
+
+    /* モーダル */
+    #modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0,0,0,0.95);
+      align-items: center;
+      justify-content: center;
+    }
+
+    #modal.show {
+      display: flex;
+    }
+
+    #modal-img {
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+    }
+
+    #modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      border: none;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      font-size: 24px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    #modal-close:hover {
+      background: rgba(255,255,255,0.3);
+      transform: rotate(90deg);
+    }
+
+    /* レスポンシブ */
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 24px;
+      }
+
+      .rank-badge {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-link">← スライドショーに戻る</a>
+
+    <header>
+      <h1>🏆 人気ランキング TOP10</h1>
+      <p>みんなが選んだ、太郎坊チャレンジ2025の人気写真</p>
+    </header>
+
+    <div id="content">
+      <div class="loading">
+        読み込み中...
+      </div>
+    </div>
+  </div>
+
+  <!-- モーダル -->
+  <div id="modal">
+    <button id="modal-close">×</button>
+    <img id="modal-img" src="" alt="">
+  </div>
+
+  <script>
+    // ランキングデータを取得
+    async function loadRanking() {
+      try {
+        const response = await fetch('/api/analytics?type=ranking&limit=10');
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'データ取得に失敗しました');
+        }
+
+        const ranking = data.data.ranking;
+
+        if (ranking.length === 0) {
+          document.getElementById('content').innerHTML = `
+            <div class="error">
+              <p>まだいいねがありません</p>
+              <p style="margin-top:10px; font-size:14px; opacity:0.7;">スライドショーでいいねを押してください！</p>
+            </div>
+          `;
+          return;
+        }
+
+        renderRanking(ranking);
+
+      } catch (error) {
+        console.error('Error loading ranking:', error);
+        document.getElementById('content').innerHTML = `
+          <div class="error">
+            <p>データの読み込みに失敗しました</p>
+            <p style="margin-top:10px; font-size:14px;">${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // ランキングを表示
+    function renderRanking(ranking) {
+      const html = ranking.map((item, index) => {
+        const rank = index + 1;
+        let badgeClass = '';
+        let medal = '';
+
+        if (rank === 1) {
+          badgeClass = 'gold';
+          medal = '🥇';
+        } else if (rank === 2) {
+          badgeClass = 'silver';
+          medal = '🥈';
+        } else if (rank === 3) {
+          badgeClass = 'bronze';
+          medal = '🥉';
+        }
+
+        const photoUrl = `https://drive.google.com/thumbnail?id=${item.photoId}&sz=w1200`;
+
+        return `
+          <div class="ranking-item">
+            <div class="rank-badge ${badgeClass}">
+              ${medal || rank}
+            </div>
+            <div class="photo-container" onclick="openModal('${photoUrl}')">
+              <img src="${photoUrl}" alt="Rank ${rank}" loading="lazy">
+              <div class="expand-icon">🔍 拡大</div>
+            </div>
+            <div class="item-info">
+              <div class="like-count">
+                ❤️ ${item.count}
+              </div>
+              <div class="photo-id">${item.photoId}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('content').innerHTML = `
+        <div class="ranking-grid">
+          ${html}
+        </div>
+      `;
+    }
+
+    // モーダルを開く
+    function openModal(imageUrl) {
+      const modal = document.getElementById('modal');
+      const modalImg = document.getElementById('modal-img');
+      modalImg.src = imageUrl;
+      modal.classList.add('show');
+    }
+
+    // モーダルを閉じる
+    function closeModal() {
+      const modal = document.getElementById('modal');
+      modal.classList.remove('show');
+    }
+
+    // イベントリスナー
+    document.getElementById('modal-close').onclick = closeModal;
+    document.getElementById('modal').onclick = (e) => {
+      if (e.target.id === 'modal') {
+        closeModal();
+      }
+    };
+
+    // ESCキーでモーダルを閉じる
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+
+    // 初期化
+    loadRanking();
+  </script>
+</body>
+</html>
