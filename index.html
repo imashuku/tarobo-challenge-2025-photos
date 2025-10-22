@@ -220,8 +220,11 @@
       background:rgba(0,0,0,0.35); border:1px solid #666;
       color:#fff; font-size:28px; cursor:pointer;
       backdrop-filter: blur(6px);
-      transition: all 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+      transition: all 0.3s ease, opacity 0.3s ease, transform 0.3s ease, bottom 0.3s ease;
       opacity: 1;
+    }
+    #like-btn.raised{
+      bottom:220px; /* サムネイル高さ140px + HUD余白12px + 元のbottom 80px - 12px調整 */
     }
     #like-btn.hidden{
       opacity: 0;
@@ -633,6 +636,9 @@
         bottom:110px; /* HUD分の余裕を持たせる */
         right:6px;
       }
+      #like-btn.raised{
+        bottom:250px; /* サムネイル高さ140px + HUD余白12px + 元のbottom 110px - 12px調整 */
+      }
 
       /* SNSシェアボタン（いいねの上、3つ縦に並ぶ: 50px×3 + gap 6px×2 = 162px） */
       #share-btns{
@@ -991,9 +997,11 @@
     const container = document.getElementById('thumbnails-container');
     const btn = document.getElementById('thumbnails-toggle');
     const hud = document.getElementById('hud');
+    const likeBtn = document.getElementById('like-btn');
 
     container.classList.toggle('show', thumbnailsVisible);
     hud.classList.toggle('raised', thumbnailsVisible);
+    likeBtn.classList.toggle('raised', thumbnailsVisible);
 
     // ボタンのテキストを切り替え
     if (thumbnailsVisible) {
